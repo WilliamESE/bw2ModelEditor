@@ -11,6 +11,7 @@ from functools import partial
 
 class unkPointEditor():
 	def __init__(self, root, p3d):
+		self.ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 		self.points = {}
 		self.frames = {}
 		self.shAll = {}
@@ -19,8 +20,8 @@ class unkPointEditor():
 		self.vEnt = {}
 		self.p3d = p3d
 		
-		self.showicon = PhotoImage(file='C:\\Users\\William\\Documents\\BW\\BW2Models\\python\\Images\\Showing.png')
-		self.hideicon = PhotoImage(file='C:\\Users\\William\\Documents\\BW\\BW2Models\\python\\Images\\Hidden.png')
+		self.showicon = PhotoImage(file=self.ROOT_DIR + '\\Images\\Icons\\Showing.png')
+		self.hideicon = PhotoImage(file=self.ROOT_DIR + '\\Images\\Icons\\Hidden.png')
 		
 		#Points list display
 		self.canvas = Canvas(root)
@@ -46,7 +47,7 @@ class unkPointEditor():
 		self.frames[title] = {}
 		self.vbtn[title] = []
 		self.vEnt[title] = []
-		deleteicon = PhotoImage(file='C:\\Users\\William\\Documents\\BW\\BW2Models\\python\\Images\\deleteIcon.png')
+		deleteicon = PhotoImage(file=self.ROOT_DIR + '\\Images\\Icons\\deleteIcon.png')
 		
 		self.frames[title]["title"] = Frame(self.frame, bd=1, relief=FLAT)
 		
@@ -60,7 +61,7 @@ class unkPointEditor():
 		self.shAll[title].pack(side=RIGHT, padx=2, pady=2)
 		self.shState[title] = 0
 		
-		eaicon = PhotoImage(file='C:\\Users\\William\\Documents\\BW\\BW2Models\\python\\Images\\addIcon.png')
+		eaicon = PhotoImage(file=self.ROOT_DIR + '\\Images\\Icons\\addIcon.png')
 		self.ebtnadd = Button(self.frames[title]["title"], width=20, height=20, relief=FLAT, image=eaicon, command = partial(self.addPoint, title))
 		self.ebtnadd.image = eaicon
 		self.ebtnadd.pack(side=RIGHT, padx=2, pady=2)

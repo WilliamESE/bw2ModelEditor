@@ -11,6 +11,7 @@ from functools import partial
 
 class materialEditor():
 	def __init__(self, root):
+		self.ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 		#Entities: Tool bar
 		#self.toolbar = Frame(root, bd=1, relief=FLAT)
 		#Add Button
@@ -43,7 +44,7 @@ class materialEditor():
 	def loadMaterials(self, mats):
 		self.matList = mats
 		
-		deleteicon = PhotoImage(file='C:\\Users\\William\\Documents\\BW\\BW2Models\\python\\Images\\deleteIcon.png')
+		deleteicon = PhotoImage(file=self.ROOT_DIR + '\\Images\\Icons\\deleteIcon.png')
 		
 		self.entriesMats = []
 		self.matFrames = []

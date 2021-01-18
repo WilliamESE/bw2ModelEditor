@@ -24,6 +24,7 @@ import panda3d_integration
 class bwSculpting():
 	def __init__(self,root, filename):
 		self.root = root
+		self.ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 		self.m_defined = 0
 		
 		#Interprate file name
@@ -100,7 +101,7 @@ class bwSculpting():
 		#Toolbar: Open, Save, ?
 		self.tools = Frame(self.frm, bd=1, relief=FLAT)
 		#Save Button
-		sicon = PhotoImage(file='C:\\Users\\William\\Documents\\BW\\BW2Models\\python\\Images\\saveIcon.png')
+		sicon = PhotoImage(file=self.ROOT_DIR + '\\Images\\Icons\\saveIcon.png')
 		self.btnSave = Button(self.tools, image=sicon, width=20, height=20, relief=FLAT, command = lambda: self.saveModel())
 		self.btnSave.image = sicon
 		if(self.Err != 0):
@@ -108,7 +109,7 @@ class bwSculpting():
 		self.btnSave.pack(side=LEFT, padx=2, pady=2)
 		
 		#Tool bar
-		cicon = PhotoImage(file='C:\\Users\\William\\Documents\\BW\\BW2Models\\python\\Images\\convertIcon.png')
+		cicon = PhotoImage(file=self.ROOT_DIR + '\\Images\\Icons\\convertIcon.png')
 		self.btnConvert = Button(self.tools, image=cicon, width=20, height=20, relief=FLAT, command= lambda: self.fileDialog("convert"))
 		if(self.Err != 0):
 			self.btnConvert["state"] = DISABLED
@@ -190,7 +191,7 @@ class bwSculpting():
 		self.tools = Frame(self.frm, bd=1, relief=FLAT)
 		
 		#Tool bar
-		cicon = PhotoImage(file='C:\\Users\\William\\Documents\\BW\\BW2Models\\python\\Images\\convertIcon.png')
+		cicon = PhotoImage(file=self.ROOT_DIR + '\\Images\\Icons\\convertIcon.png')
 		self.btnConvert = Button(self.tools, image=cicon, width=20, height=20, relief=FLAT, command= lambda: self.fileDialog("convert"))
 		if(self.Err != 0):
 			self.btnConvert["state"] = DISABLED
@@ -235,9 +236,9 @@ class bwSculpting():
 	def fileDialog(self,tp):
 		#Open file dialog
 		if(tp == "model"):
-			fname = tkFileDialog.askopenfilename(initialdir = "C:\\Users\\William\\Documents\\BW\\BW2Models\\python",filetypes = (("BW Models","*.bwm"),("Object Models","*.obj"),("all files","*.*")))
+			fname = tkFileDialog.askopenfilename(initialdir = self.ROOT_DIR,filetypes = (("BW Models","*.bwm"),("Object Models","*.obj"),("all files","*.*")))
 		elif(tp == "convert"):
-			fname = tkFileDialog.asksaveasfilename(initialdir = "C:\\Users\\William\\Documents\\BW\\BW2Models\\python",filetypes=[("BW Models", '*.bwm')])
+			fname = tkFileDialog.asksaveasfilename(initialdir = self.ROOT_DIR,filetypes=[("BW Models", '*.bwm')])
 		if not fname: return
 		
 		if(tp == "model"):

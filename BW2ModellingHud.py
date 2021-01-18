@@ -19,6 +19,7 @@ class Form1(Frame):
 	def __init__(self, parent=None, **kw):
 		Frame.__init__(self, parent, kw)
 		self.op = False
+		self.ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 	
 	def makeWidgets(self):
 		#Construct Menu System
@@ -42,7 +43,7 @@ class Form1(Frame):
 		
 	def fileLoad(self):
 		# Use Dialog Box to locate a svg files
-		self.filenm = tkFileDialog.askopenfilename(initialdir = "C:\\Users\\William\\Documents\\BW\\BW2Models\\python",filetypes = (("BW Models","*.bwm"),("Object Files","*.obj"),("all files","*.*")))
+		self.filenm = tkFileDialog.askopenfilename(initialdir = self.ROOT_DIR,filetypes = (("BW Models","*.bwm"),("Object Files","*.obj"),("all files","*.*")))
 		if not self.filenm: return
 		dirpart, filepart = ntpath.split(self.filenm) # get the directory part into dirpart and the file name into filepart
 		exts = filepart.split('.') # parts based on . to find the extension.  Actual extension will be exts[len(exts)-1]
@@ -58,28 +59,28 @@ class Form1(Frame):
 			
 		
 def main():
-    global root,Frm1
+	global root,Frm1
 
-    root = Tk()
+	root = Tk()
 
-    root.geometry("%dx%d+0+0" % (800, 480))
-    root.wm_title("Bw2 Model Editor")
+	root.geometry("%dx%d+0+0" % (800, 480))
+	root.wm_title("Bw2 Model Editor")
 
-    root.update() # this is needed to obtain actual screen measurements 
-    #canv = Canvas(root, width=1200, height=600)
-    #canv.place(x=10,y=300)
-    #root.configure(background='black')
-        
-    Frm1 = Form1(root)
-    # Frm1.Setup() # based on BinData (and other Config stuff), init some of the Devices[] data.
-    Frm1.makeWidgets() # Make sure Setup runs before makeWidgets
-    Frm1.pack(side=TOP)
-    
-    root.update() # this is needed to obtain actual screen measurements 
+	root.update() # this is needed to obtain actual screen measurements 
+	#canv = Canvas(root, width=1200, height=600)
+	#canv.place(x=10,y=300)
+	#root.configure(background='black')
+		
+	Frm1 = Form1(root)
+	# Frm1.Setup() # based on BinData (and other Config stuff), init some of the Devices[] data.
+	Frm1.makeWidgets() # Make sure Setup runs before makeWidgets
+	Frm1.pack(side=TOP)
 
-    Frm1._update() # Activate the 1 second process.
-    
-    root.mainloop()
+	root.update() # this is needed to obtain actual screen measurements 
+
+	Frm1._update() # Activate the 1 second process.
+
+	root.mainloop()
     
 if __name__ == '__main__':
     main()

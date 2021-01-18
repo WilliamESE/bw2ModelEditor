@@ -12,13 +12,14 @@ from functools import partial
 class entityEditor():
 	def __init__(self, root):
 		#Entities: Tool bar
+		self.ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 		self.toolbar = Frame(root, bd=1, relief=FLAT)
 		
-		self.showicon = PhotoImage(file='C:\\Users\\William\\Documents\\BW\\BW2Models\\python\\Images\\Showing.png')
-		self.hideicon = PhotoImage(file='C:\\Users\\William\\Documents\\BW\\BW2Models\\python\\Images\\Hidden.png')
+		self.showicon = PhotoImage(file=self.ROOT_DIR + '\\Images\\Icons\\Showing.png')
+		self.hideicon = PhotoImage(file=self.ROOT_DIR + '\\Images\\Icons\\Hidden.png')
 		
 		#Add Button
-		eaicon = PhotoImage(file='C:\\Users\\William\\Documents\\BW\\BW2Models\\python\\Images\\addIcon.png')
+		eaicon = PhotoImage(file=self.ROOT_DIR + '\\Images\\Icons\\addIcon.png')
 		self.ebtnadd = Button(self.toolbar, width=20, height=20, relief=FLAT, image=eaicon, command = lambda: self.bwmInitEntity_Add())
 		self.ebtnadd.image = eaicon
 		self.ebtnadd.pack(side=LEFT, padx=2, pady=2)
@@ -54,8 +55,8 @@ class entityEditor():
 		self.entityList = entlist
 		self.p3d = p3d
 		#Pre-processing
-		editicon = PhotoImage(file='C:\\Users\\William\\Documents\\BW\\BW2Models\\python\\Images\\editIcon.png')
-		deleteicon = PhotoImage(file='C:\\Users\\William\\Documents\\BW\\BW2Models\\python\\Images\\deleteIcon.png')
+		editicon = PhotoImage(file=self.ROOT_DIR + '\\Images\\Icons\\editIcon.png')
+		deleteicon = PhotoImage(file=self.ROOT_DIR + '\\Images\\Icons\\deleteIcon.png')
 		
 		#Loop through entities
 		self.entityFrames = []
