@@ -43,9 +43,13 @@ class Form1(Frame):
 		
 	def fileLoad(self):
 		# Use Dialog Box to locate a svg files
-		self.filenm = tkFileDialog.askopenfilename(initialdir = self.ROOT_DIR,filetypes = (("BW Models","*.bwm"),("Object Files","*.obj"),("all files","*.*")))
-		if not self.filenm: return
-		dirpart, filepart = ntpath.split(self.filenm) # get the directory part into dirpart and the file name into filepart
+		filenm = tkFileDialog.askopenfilename(initialdir = self.ROOT_DIR,filetypes = (("BW Models","*.bwm"),("Object Files","*.obj"),("all files","*.*")))
+		if not filenm: return
+		self.loadModel(filenm)
+			
+	def loadModel(self,filename):
+		self.filenm = filename
+		dirpart, filepart = ntpath.split(filename) # get the directory part into dirpart and the file name into filepart
 		exts = filepart.split('.') # parts based on . to find the extension.  Actual extension will be exts[len(exts)-1]
 		ext = exts[len(exts)-1]
 		if(ext == "bwm")or(ext == "obj"):
@@ -55,11 +59,12 @@ class Form1(Frame):
 				self.scuplter = SculptingHud.bwSculpting(root,self.filenm)
 			self.op = True
 		else:
-			messagebox.showerror(title="Error", message="Unknown File Type")
-			
+			return False
 		
 def main():
 	global root,Frm1
+	
+	args = sys.argv[1:] #Get main arguments
 
 	root = Tk()
 
@@ -77,8 +82,12 @@ def main():
 	Frm1.pack(side=TOP)
 
 	root.update() # this is needed to obtain actual screen measurements 
-
 	Frm1._update() # Activate the 1 second process.
+	
+	#The only argument (at least for now) should be a model
+	if(len(args) > 0):
+		modelName = args[0]
+		Frm1.loadModel(modelName)
 
 	root.mainloop()
     

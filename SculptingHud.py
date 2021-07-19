@@ -15,6 +15,7 @@ import entityEditor
 import materialEditor
 import meshEditor
 import unkPointEditor
+import jointsEditor
 from functools import partial
 from pprint import pprint
 
@@ -108,13 +109,19 @@ class bwSculpting():
 			self.btnSave["state"] = DISABLED
 		self.btnSave.pack(side=LEFT, padx=2, pady=2)
 		
-		#Tool bar
+		#Convert
 		cicon = PhotoImage(file=self.ROOT_DIR + '\\Images\\Icons\\convertIcon.png')
 		self.btnConvert = Button(self.tools, image=cicon, width=20, height=20, relief=FLAT, command= lambda: self.fileDialog("convert"))
 		if(self.Err != 0):
 			self.btnConvert["state"] = DISABLED
 		self.btnConvert.image = cicon
 		self.btnConvert.pack(side=LEFT, padx=2, pady=2)
+		
+		
+		aicon = PhotoImage(file=self.ROOT_DIR + '\\Images\\Icons\\addIcon.png')
+		self.btnShow = Button(self.tools, image=aicon, width=20, height=20, relief=FLAT, command= lambda: self.loopThrough())
+		self.btnShow.image = aicon
+		self.btnShow.pack(side=LEFT, padx=2, pady=2)
 		self.tools.pack(side=TOP, fill=X)
 		
 		#Side panel: Display information about the model
@@ -152,14 +159,16 @@ class bwSculpting():
 		self.gphFrm.pack(side=RIGHT, fill=BOTH, expand=1)
 		#self.gph = glController(self.gphFrm)
 		
-		self.p3d = panda3d_integration.TkinterGuiClass(self.gphFrm, ())
-		self.p3d.displayBWM(self.model)
+		self.f_p3d = panda3d_integration.TkinterGuiClass(self.gphFrm, ())
+		self.p3d = panda3d_integration.p3dClass(self.f_p3d.getBase(),self.model)
+		#self.p3d.displayBWM(self.model)
 		
 		self.basicEdit = basicEditor.basicEditor(self.sideTabModel)
 		self.entityEdit = entityEditor.entityEditor(self.sideTabEntities)
 		self.materialsEdit = materialEditor.materialEditor(self.sideTabMaterial)
 		self.meshesEdit = meshEditor.meshEditor(self.sideTabMesh)
 		self.unkPointEdit = unkPointEditor.unkPointEditor(self.sideTabUnk1,self.p3d)
+		self.jointsEdit = jointsEditor.jointsEditor(self.sideTabBones,self.p3d)
 		
 		#Load information
 		self.entityEdit.loadEntities(self.model.m["Entities"],self.p3d)
@@ -168,10 +177,14 @@ class bwSculpting():
 		self.unkPointEdit.loadPoints("Unknowns 1",self.model.m["Un1"])
 		self.unkPointEdit.loadPoints("Unknowns 2",self.model.m["Un2"])
 		self.basicEdit.loadInformation(self.model,1,self.Err)
+		self.jointsEdit.loadPoints(self.model.m["Bones"])
 		
 		
 		self.m_defined = 1
 		return self.Err
+	
+	def loopThrough(self):
+		self.p3d.loopThroughFaces()
 		
 	def objInit(self, root, filename):
 		#Standard obj file format
@@ -270,6 +283,7 @@ class bwSculpting():
 			self.basicEdit.save_bwm_info(self.model)
 			self.materialsEdit.saveMaterials()
 			self.unkPointEdit.savePoints()
+			self.jointsEdit.savePoints()
 			self.model.savebwm()
 		return
 	

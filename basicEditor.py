@@ -12,6 +12,7 @@ from functools import partial
 
 class basicEditor():
 	def __init__(self, root):
+		self.ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 		self.canvas = Canvas(root)
 		self.frame = Frame(self.canvas,width=300)
 		self.scroll = Scrollbar(root, orient="vertical", width=20, command=self.canvas.yview)
@@ -34,10 +35,12 @@ class basicEditor():
 		for i in range(len(self.set_frames)):
 			self.set_frames[i][0].destroy()
 			self.set_frames[i][1].destroy()
+		self.stfrm.destroy()
 
 	def loadInformation(self,model,tp,e):
 		self.type = tp
 		if(tp == 1):
+			self.m = model.m
 			self.load_bwm_info(model,e)
 		else:
 			self.load_obj_info(model)
@@ -81,34 +84,6 @@ class basicEditor():
 				{"Text":"# of Indices: %d" % model.m["cntIndices"],"Type": "Info"},
 			]
 		}]
-		#{
-		#	"Title": "Sride Information",
-		#	"Settings": [
-		#		{"Name":"Unk 1:","Type": "SNumber","Index": 0,"Width": 12,"dataType": "i", "WidthText": 7},
-		#		{"Name":"Unk 2:","Type": "SNumber","Index": 1,"Width": 12,"dataType": "i", "WidthText": 7},
-		#		{"Name":"Unk 3:","Type": "SNumber","Index": 2,"Width": 12,"dataType": "i", "WidthText": 7},
-		#		{"Name":"Unk 4:","Type": "SNumber","Index": 3,"Width": 12,"dataType": "i", "WidthText": 7},
-		#		{"Name":"Unk 5:","Type": "SNumber","Index": 4,"Width": 12,"dataType": "i", "WidthText": 7},
-		#		{"Name":"Unk 6:","Type": "SNumber","Index": 5,"Width": 12,"dataType": "i", "WidthText": 7},
-		#		{"Name":"Unk 7:","Type": "SNumber","Index": 6,"Width": 12,"dataType": "i", "WidthText": 7},
-		#		{"Name":"Unk 8:","Type": "SNumber","Index": 7,"Width": 12,"dataType": "i", "WidthText": 7},
-		#		{"Name":"Unk 9:","Type": "SNumber","Index": 8,"Width": 12,"dataType": "i", "WidthText": 7},
-		#		{"Name":"Unk 10:","Type": "SNumber","Index": 9,"Width": 12,"dataType": "i", "WidthText": 7},
-		#		{"Name":"Unk 11:","Type": "SNumber","Index": 10,"Width": 12,"dataType": "i", "WidthText": 7},
-		#		{"Name":"Unk 12:","Type": "SNumber","Index": 11,"Width": 12,"dataType": "i", "WidthText": 7},
-		#		{"Name":"Unk 13:","Type": "SNumber","Index": 12,"Width": 12,"dataType": "i", "WidthText": 7},
-		#		{"Name":"Unk 14:","Type": "SNumber","Index": 13,"Width": 12,"dataType": "i", "WidthText": 7},
-		#		{"Name":"Unk 15:","Type": "SNumber","Index": 14,"Width": 12,"dataType": "i", "WidthText": 7},
-		#		{"Name":"Unk 16:","Type": "SNumber","Index": 15,"Width": 12,"dataType": "i", "WidthText": 7},
-		#		{"Name":"Unk 17:","Type": "SNumber","Index": 16,"Width": 12,"dataType": "i", "WidthText": 7},
-		#		{"Name":"Unk 18:","Type": "SNumber","Index": 17,"Width": 12,"dataType": "i", "WidthText": 7},
-		#		{"Name":"Unk 19:","Type": "SNumber","Index": 18,"Width": 12,"dataType": "i", "WidthText": 7},
-		#		{"Name":"Unk 20:","Type": "SNumber","Index": 19,"Width": 12,"dataType": "i", "WidthText": 7},
-		#		{"Name":"Unk 21:","Type": "SNumber","Index": 20,"Width": 12,"dataType": "i", "WidthText": 7},
-		#		{"Name":"Unk 22:","Type": "SNumber","Index": 21,"Width": 12,"dataType": "i", "WidthText": 7},
-		#		{"Name":"Unk 23:","Type": "SNumber","Index": 22,"Width": 12,"dataType": "i", "WidthText": 7},
-		#	]
-		#}]
 		self.settings = []
 		for setGroup in settingOptions:
 			setGroup_frm = Frame(self.frame, bd=1, relief=FLAT)
@@ -168,8 +143,33 @@ class basicEditor():
 				if(s["Type"] != "Info"):
 					self.settings.append(setg)
 				set_frm.pack(side=TOP, fill=X)
-				self.set_frames.append([setGroup_frm, settings_frm])
 			settings_frm.pack(side=TOP, fill=X)
+			self.set_frames.append([setGroup_frm, settings_frm])
+		
+		#Strides
+		editicon = PhotoImage(file=self.ROOT_DIR + '\\Images\\Icons\\editIcon.png')
+		
+		setGroup_frm = Frame(self.frame, bd=1, relief=FLAT)
+		sTitle_lbl = Label(setGroup_frm,text="Strides")
+		sTitle_lbl.config(font=("Times New Roman", 14))
+		sTitle_lbl.pack(side=LEFT)
+		setGroup_frm.pack(side=TOP, fill=X)
+		
+		self.stfrm = Frame(self.frame, bd=1, relief=FLAT)
+		scnt = 0
+		for s in model.m["Stride"]:
+			set_frm = Frame(self.stfrm, bd=1, relief=FLAT)
+			
+			set_lbl = Label(set_frm,text="S_{0}".format(scnt),anchor="w")
+			set_lbl.pack(side=LEFT)
+			
+			self.ebtnadd = Button(set_frm, width=20, height=20, relief=FLAT, image=editicon, command = partial(self.openViewer, scnt))
+			self.ebtnadd.image = editicon
+			self.ebtnadd.pack(side=RIGHT, padx=2, pady=2)
+			
+			set_frm.pack(side=TOP, fill=X)
+			scnt += 1
+		self.stfrm.pack(side=TOP, fill=X)
 	
 	def save_bwm_info(self,model):
 		for s in self.settings:
@@ -224,3 +224,20 @@ class basicEditor():
 	
 	def focus_me(self,e,o):
 		o.focus_force()
+	
+	def openViewer(self,index):
+		self.Vieweditor = Tk()
+		self.Vieweditor.wm_title("Stride Editor")
+		self.Vieweditor.geometry("%dx%d+0+0" % (200, 550))
+		
+		stfrm = Frame(self.Vieweditor, bd=1, relief=FLAT)
+		scnt = 0
+		for s in range(len(self.m["Stride"][index])):
+			set_frm = Frame(stfrm, bd=1, relief=FLAT)
+			
+			set_lbl = Label(set_frm,text="Number {0} = {1}".format(scnt,self.m["Stride"][index][s]),anchor="w")
+			set_lbl.pack(side=LEFT)
+			
+			set_frm.pack(side=TOP, fill=X)
+			scnt += 1
+		stfrm.pack(side=TOP, fill=X)

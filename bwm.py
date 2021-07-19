@@ -55,6 +55,9 @@ class bwm():
 		self.m["cntMaterials"] = self.readInt32()
 		self.m["cntMeshs"] = self.readInt32()
 		self.m["cntBones"] = self.readInt32()
+		self.m["hasJoints"] = False
+		if(self.m["cntBones"] != 0):
+			self.m["hasJoints"] = True
 		self.m["cntEntities"] = self.readInt32()
 		self.m["cntUnknown1"] = self.readInt32()	# I suspect these have something to do with construction [verified false] - Matt commented "circle foot prints", which I have come to understand as incorrect through viewing the points in 3D modelling software
 		self.m["cntUnknown2"] = self.readInt32()	#
@@ -69,9 +72,6 @@ class bwm():
 		#Model Frame Info
 		self.m["cntVerticies"] = self.readInt32()
 		self.m["cntStrides"] = self.readInt32()
-		skel = False
-		if(self.m["cntStrides"] != 1):
-			skel = True
 		self.m["Unknown5"] = self.readInt32()		# 120 (*((_DWORD *)v75[66] + 30) = 2;)
 		self.m["cntIndices"] = self.readInt32()
 		
@@ -116,25 +116,50 @@ class bwm():
 		# The stride pointer points to the 21st integer
 		self.m["VertexSize"] = self.readVertexSize()
 		
-		#if(skel == True):
-		#	return 6
-		
 		self.m["Stride"] = []
+		print(self.f.tell())
+		print(self.m["SdePos"])
+		strLen = [23,34,34,34,34,34,34,34,34]
 		for s in range(self.m["cntStrides"]):
-			self.m["Stride"].append(self.readStride())
-		
+			self.m["Stride"].append(self.readStride(strLen[s]))
+		print(self.f.tell())
 		#Verticies
 		self.m["Vertices"] = []
 		for x in range(self.m["cntVerticies"]):
 			v = self.readVertex()
 			self.m["Vertices"].append(v)
+				
+		if(self.m["hasJoints"] == True):
+			self.m["Matrices"] = {}
+			self.m["Matrices"]["Connection"] = []
+			self.m["Matrices"]["Weight_0"] = []
+			self.m["Matrices"]["Weight_1"] = []
+			self.m["Matrices"]["Weight_2"] = []
+			self.m["Matrices"]["Weight_3"] = []
+			
+			for x in range(0,self.m["cntVerticies"]):
+				self.m["Matrices"]["Connection"].append(self.readJointConnections())
+				
+			for x in range(0,self.m["cntVerticies"]):
+				self.m["Matrices"]["Weight_0"].append(self.readFloat())
+			
+			for x in range(0,self.m["cntVerticies"]):
+				self.m["Matrices"]["Weight_1"].append(self.readFloat())
+			
+			for x in range(0,self.m["cntVerticies"]):
+				self.m["Matrices"]["Weight_2"].append(self.readFloat())
+			
+			for x in range(0,self.m["cntVerticies"]):
+				self.m["Matrices"]["Weight_3"].append(self.readFloat())
 		
+		print(self.f.tell())	
 		#Indices
 		self.m["Indices"] = []
 		for x in range(self.m["cntIndices"]):
 			val = self.readInt16()
 			self.m["Indices"].append(val)
-		
+			
+		print(self.f.tell())
 		#Cleaves
 		if(self.m["Type"] == 6):
 			self.m["cntCleaves"] = self.readInt32()			
@@ -247,6 +272,22 @@ class bwm():
 		#Verticies
 		for vert in self.m["Vertices"]:
 			self.writeVertex(bw,vert)
+			
+		if(self.m["hasJoints"] == True):			
+			for x in range(0,self.m["cntVerticies"]):
+				self.writeJointConnections(bw,self.m["Matrices"]["Connection"][x])
+				
+			for x in range(0,self.m["cntVerticies"]):
+				self.writeFloat(bw,self.m["Matrices"]["Weight_0"][x])
+			
+			for x in range(0,self.m["cntVerticies"]):
+				self.writeFloat(bw,self.m["Matrices"]["Weight_1"][x])
+			
+			for x in range(0,self.m["cntVerticies"]):
+				self.writeFloat(bw,self.m["Matrices"]["Weight_2"][x])
+			
+			for x in range(0,self.m["cntVerticies"]):
+				self.writeFloat(bw,self.m["Matrices"]["Weight_3"][x])
 			
 		#Indices
 		for ind in self.m["Indices"]:
@@ -398,17 +439,31 @@ class bwm():
 	
 	def readBone(self):
 		bone = {}
-		bone["P1"] = self.readLHPoint()
-		bone["P2"] = self.readLHPoint()
-		bone["P3"] = self.readLHPoint()
-		bone["P4"] = self.readLHPoint()
+		bone["P1"] = self.readLHPoint() #Rotation?
+		bone["P2"] = self.readLHPoint() #Translation?
+		bone["P3"] = self.readLHPoint() #Scale?
+		bone["Position"] = self.readLHPoint() #Position
 		return bone
 		
 	def writeBone(self,f,bone):
-		writeLHPoint(f,bone["P1"])
-		writeLHPoint(f,bone["P2"])
-		writeLHPoint(f,bone["P3"])
-		writeLHPoint(f,bone["P4"])
+		self.writeLHPoint(f,bone["P1"])
+		self.writeLHPoint(f,bone["P2"])
+		self.writeLHPoint(f,bone["P3"])
+		self.writeLHPoint(f,bone["Position"])
+		
+	def readJointConnections(self):
+		conn = []
+		conn.append(self.readInt8())
+		conn.append(self.readInt8())
+		conn.append(self.readInt8())
+		conn.append(self.readInt8())
+		return conn
+		
+	def writeJointConnections(self,f,conn):
+		self.writeInt8(f,conn[0])
+		self.writeInt8(f,conn[1])
+		self.writeInt8(f,conn[2])
+		self.writeInt8(f,conn[3])
 		
 	def readEntity(self):
 		ent = {}
@@ -497,9 +552,9 @@ class bwm():
 			self.writeUInt32(f,sz["Id"])
 			self.writeUInt32(f,sz["Value"])
 			
-	def readStride(self):
+	def readStride(self,length):
 		st = []
-		for i in range(23):
+		for i in range(length):
 			st.append(self.readInt32())
 		return st
 		

@@ -37,76 +37,7 @@ class TkinterGuiClass(ttk.Frame):
 		self.base.win = self.base.makeDefaultPipe()
 		self.base.openDefaultWindow(props=props)
 		
-		self.mousedown1 = False
-		self.wheelChanged = False
-		self.distance = 94
-		self.S_t = 0
-		self.S_b = 0
-		self.S_mx = 0
-		self.S_my = 0
-		self.theta = 31.67
-		self.beta = 0
-		self.sensitivityMouse = 50
-		self.sensitivityWheel = 5
-		self.base.accept('mouse1', self.mousedown)
-		self.base.accept('mouse1-up', self.mouseup)
-		self.base.accept('wheel_up', self.wheeldown)
-		self.base.accept('wheel_down', self.wheelup)
-		self.base.taskMgr.add(self.objectRotation, "RotateObject")
-		
 		self.frame.bind("<Configure>",self.resized)
-	
-	def mousedown(self):
-		self.mousedown1 = True
-		self.S_t = self.theta
-		self.S_b = self.beta
-		
-		self.S_mx = self.base.mouseWatcherNode.getMouseX()
-		self.S_my = self.base.mouseWatcherNode.getMouseY()
-		
-	def mouseup(self):
-		self.mousedown1 = False
-		
-	def wheeldown(self):
-		self.wheelChanged = True
-		self.distance -= self.sensitivityWheel
-		self.S_t = self.theta
-		self.S_b = self.beta
-		
-		self.S_mx = self.base.mouseWatcherNode.getMouseX()
-		self.S_my = self.base.mouseWatcherNode.getMouseY()
-		
-	def wheelup(self):
-		self.wheelChanged = True
-		self.distance += self.sensitivityWheel
-		self.S_t = self.theta
-		self.S_b = self.beta
-		
-		self.S_mx = self.base.mouseWatcherNode.getMouseX()
-		self.S_my = self.base.mouseWatcherNode.getMouseY()
-	
-	def objectRotation(self, task):
-		if((self.mousedown1 == True) or (self.wheelChanged == True)):
-			C_mx = self.base.mouseWatcherNode.getMouseX() #A value between -1 and 1, where 0 is the center. Negative to the left, positive to the right
-			C_my = self.base.mouseWatcherNode.getMouseY()
-			
-			self.theta = self.S_t + ((self.S_mx - C_mx) * self.sensitivityMouse)
-			self.beta = self.S_b + ((self.S_my - C_my) * self.sensitivityMouse)
-			
-			self.theta = self.theta - (360 * floor(self.theta / 360))
-			
-			self.setCamPos(self.theta, self.beta, self.distance)
-			
-			self.base.camera.lookAt(self.o_x,self.o_y,self.o_z)
-			self.base.camera.setR(90)
-			if((self.theta < 0) and (self.theta > -180)):
-				self.base.camera.setR(-90)
-			if(self.theta > 180):
-				self.base.camera.setR(-90)
-			
-			self.wheelChanged = False
-			
-		return task.again
 	
 	def resized(self,event):
 		self.frame.update()
@@ -121,21 +52,293 @@ class TkinterGuiClass(ttk.Frame):
 		#if self.base.win is not None:
 		self.base.win.requestProperties(props)
 		
+	def getBase(self):
+		return self.base
+
+class p3dClass():
+	bw2Root = "/c/Program Files (x86)/Lionhead Studios/Black & White 2/"
+	bw2RootWin = "C:\\Program Files (x86)\\Lionhead Studios\\Black & White 2\\Data\\Art\\textures"
+	bw2Textures = bw2Root+"/Data/Art/textures"
+	
+	class bw2TextureClass():
+		def __init__(self,name,material,locationWin,location):
+			#Each material will have 7 pieces of information:
+			#	Diffuse map - the main texture connected to the base texture coords
+			self.Diffuse = {}
+			self.Diffuse["Main"] = material["DiffuseMap"]
+			if(self.Diffuse["Main"] == ""):
+				self.Diffuse["Main"] = "t_courtyardground.dds"
+			self.locateFile(self.Diffuse,locationWin)
+			#	Light map - uses the base texture coords
+			self.Light = {}
+			self.Light["Main"] = material["LightMap"]
+			self.locateFile(self.Light,locationWin)
+			#	Growth map - secondary texture (in all models view to this point, it has been related to foliage)
+			self.growth = {}
+			self.growth["Main"] = material["FoliageMap"]
+			self.locateFile(self.growth,locationWin)
+			#	Specular map - uses the base texture coords
+			self.specular = {}
+			self.specular["Main"] = material["SpecularMap"]
+			self.locateFile(self.specular,locationWin)
+			#	Animation map - secondary texture (in all models view to this point, it has been related to fire -- likely fire animation textures)
+			self.animation = {}
+			self.animation["Main"] = material["FireMap"]
+			#self.locateFile(self.animation,locationWin)
+			#	Normal map - uses the base texture coords
+			self.normal = {}
+			self.normal["Main"] = material["NormalMap"]
+			self.locateFile(self.normal,locationWin)
+			#	Type - what type of material this is: _glossy_, _tree_
+			self.type = material["Type"]
+			
+			#Texture arrays for panda3D
+			self.stages = [] #These are the slots in which a single texture can be loaded
+			self.texAttrib = TextureAttrib.make()#Storage for multiple texture stages which can be applied to a geomtery node
+			
+			self.defineStage(name,"diffuse","base",self.Diffuse,location)
+			#self.defineStage(name,"light","base",self.Light,location)
+			self.defineStage(name,"growth","growth",self.growth,location)
+			self.defineStage(name,"specular","base",self.specular,location)
+			#self.defineStage(name,"animation","animation",self.animation,location)
+			self.defineStage(name,"normal","base",self.normal,location)
+					
+			#Texture order
+			#The following function call can be used to specify the order in which the textures will appear
+			#<texturestage>.setSort(#) #The default is 0
+			#<texturestage>.setPriority() #Sets which texture is of the most importance
+			
+			#Texture transforms would likely have to be used for the flame textures. But must be done through the nodepath
+			#<nodepath>.setTextureOffset(<texturestage>, uoffset, voffset)
+			#<nodepath>.setTextureScale(<texturestage>, uScale, vScale)
+			#<nodepath>.setTextureRotate(<texturestage>, degrees)
+			
+			#The mode maybe be useful for spectual and normal maps and the like...
+			#plants and veins could be best as decal
+			#spectual could be glossy
+			#normal is (nicely named) a normal map mode
+			
+		def defineStage(self,name,ty,coord,item,location):
+			if((coord != "base") and (coord != "growth") and (coord != "animation")):
+				return False
+			
+			#Main first, check to make sure it is defined and was found
+			if(item["hasMain"] == True):
+				filename = location + "/" + item["Main"]
+				texture = loader.loadTexture(filename)
+				
+				stg = TextureStage(name+ty+"Main")
+				stg.setTexcoordName(coord)
+				if((ty == "diffuse")):
+					stg.setMode(TextureStage.MModulate)
+				elif(ty == "normal"):
+					stg.setMode(TextureStage.MNormal)
+				elif(ty == "specular"):
+					stg.setMode(TextureStage.MGloss)
+				self.texAttrib = self.texAttrib.addOnStage(stg, texture)
+			
+			#Evil
+			if(item["hasEvil"] == True):
+				filename = location + "/" + item["Evil"]
+				texture = loader.loadTexture(filename)
+				
+				stg = TextureStage(name+ty+"Evil")
+				stg.setTexcoordName(coord)
+				if((ty == "diffuse")):
+					stg.setMode(TextureStage.MModulate)
+				elif(ty == "normal"):
+					stg.setMode(TextureStage.MNormal)
+				elif(ty == "specular"):
+					stg.setMode(TextureStage.MGloss)
+				#self.texAttrib = self.texAttrib.addOnStage(stg, texture)
+				
+			#Good
+			if(item["hasGood"] == True):
+				filename = location + "/" + item["Good"]
+				texture = loader.loadTexture(filename)
+				
+				stg = TextureStage(name+ty+"Good")
+				stg.setTexcoordName(coord)
+				if((ty == "diffuse")):
+					stg.setMode(TextureStage.MModulate)
+				elif(ty == "normal"):
+					stg.setMode(TextureStage.MNormal)
+				elif(ty == "specular"):
+					stg.setMode(TextureStage.MGloss)
+				#self.texAttrib = self.texAttrib.addOnStage(stg, texture)
+			
+		def locateFile(self,item,location):
+			item["hasMain"] = False
+			item["hasEvil"] = False
+			item["hasGood"] = False
+			
+			if(item["Main"] == ""):
+				return False
+				
+			filename = location + "/" + item["Main"]
+			
+			if(os.path.exists(filename) == True):
+				item["hasMain"] = True
+				#We have the file, so that's good
+				#	We'll have to check for alignment files that go alone with this		
+				if("neut" in item["Main"]):
+					#Texture files for which exist alternate alignments follow the structure:
+					#	t_<tribe>_<object>_<align>_<extension>
+					#Some texture types have an extra item it:
+					#	specular is spc
+					#	lightmap is lightmap
+					#	normal is nrm
+					evilName = item["Main"].replace("neut","evil")
+					goodName = item["Main"].replace("neut","good")
+					
+					evilLoca = location + "/" + evilName
+					goodLoca = location + "/" + goodName
+					if(os.path.exists(evilLoca) == True):
+						item["Evil"] = evilName
+						item["hasEvil"] = True
+					if(os.path.exists(goodLoca) == True):
+						item["Good"] = goodName
+						item["hasGood"] = True	
+				return True
+			return False
+			
+		def getAttrib(self):
+			return self.texAttrib
+			
+	
+	def __init__(self, base, model):
+		self.base = base
+		self.model = model
+		#Determine the type of model we are working with
+		#if(not ("MagicNum" in model)):
+		
+		#else:
+		#Interprate file name
+		full_location = model.fln #Get full name from the model
+		directory, filename = ntpath.split(full_location) #Split the file name from the directory
+		exts = filename.split('.bwm') #Remove the extension
+		self.filename = exts[0] #Save this value in a global
+		
+		self.loadBWM(model.m,self.filename)
+		
+	def loadBWM(self,model,name):
+		#Analyzing vertex information:
+		texcoord2 = False
+		texcoord3 = False
+		
+		geomfmt = GeomVertexArrayFormat()
+		geomfmt.addColumn("vertex",3,Geom.NTFloat32,Geom.CPoint)
+		geomfmt.addColumn("normal",3,Geom.NTFloat32,Geom.CNormal)
+		geomfmt.addColumn("texcoord.base",2,Geom.NTFloat32,Geom.CTexcoord)
+		if(model["VertexSize"]["Items"][3]["Enabled"] == True):
+			geomfmt.addColumn("texcoord.growth",2,Geom.NTFloat32,Geom.CTexcoord)
+			texcoord2 = True
+		if(model["VertexSize"]["Items"][4]["Enabled"] == True):
+			geomfmt.addColumn("texcoord.animation",2,Geom.NTFloat32,Geom.CTexcoord)
+			texcoord3 = True
+		
+		#Create new vertex format
+		gVerfmt = GeomVertexFormat()
+		gVerfmt.addArray(geomfmt)
+		gVerfmt = GeomVertexFormat.registerFormat(gVerfmt)
+		
+		#Create panda3D vertex object, it is in this that all the vertices will be stored
+		geomDataAry = GeomVertexData(name, gVerfmt, Geom.UHStatic)
+		#Define writers
+		wvertices = GeomVertexWriter(geomDataAry, 'vertex')
+		wnormals = GeomVertexWriter(geomDataAry, 'normal')
+		wtexcoord = GeomVertexWriter(geomDataAry, 'texcoord.base')
+		if(texcoord2 == True):
+			wtexcoord2 = GeomVertexWriter(geomDataAry, 'texcoord.growth')
+		if(texcoord3 == True):
+			wtexcoord3 = GeomVertexWriter(geomDataAry, 'texcoord.animation')
+		
+		#Fill vertex data array
+		for vtx in range(0,model["cntVerticies"]):
+			#Read vertex information from model
+			p = model["Vertices"][vtx]["Position"]
+			n = model["Vertices"][vtx]["Normal"]
+			v = model["Vertices"][vtx]["V"]
+			u = model["Vertices"][vtx]["U"]
+			v2 = model["Vertices"][vtx]["Unknown1"][0]
+			u2 = model["Vertices"][vtx]["Unknown1"][1]
+			v3 = model["Vertices"][vtx]["Unknown2"][0]
+			u3 = model["Vertices"][vtx]["Unknown2"][1]
+			
+			#Store them in the vertex data array
+			wvertices.addData3f(p["X"],p["Y"],p["Z"])
+			wnormals.addData3f(n["X"],n["Y"],n["Z"])
+			wtexcoord.addData2(u, -v) #bwm files, the v coord is flipped, hence the reason for the negative
+			wtexcoord2.addData2(u2, -v2)
+			wtexcoord3.addData2(u3, -v3)
+			
+		#Pre-material processing
+		#	Here the plan is to loop through the materials, locate the textures and determine how they should be loaded.
+		materialDefs = []
+		for mat in model["Materials"]:
+			materialDefs.append(self.bw2TextureClass(name,mat,self.bw2RootWin,self.bw2Textures))
+		
+		#Now that the vertices have been transfered into the data array.
+		# The next step is to go through each mesh and its subsequent materials
+		# and build the geometry nodes.
+		
+		#Create instance of panda geometry node
+		geometry = GeomNode(name)
+		
+		indPos = 0 #Keeps track of the index position
+		for mesh in model["Meshs"]:
+			for material in mesh["Materials"]:
+				#This name will be used to identify the geom later
+				geomName = mesh["Name"] + "_" + str(material["MaterialRef"])
+				
+				#Create triangles for this material
+				face = GeomTriangles(Geom.UHStatic)
+				indPos = material["offIndices"]
+				for i in range(indPos,indPos + material["cntIndices"],3):
+					try:
+						face.addVertices(model["Indices"][i],model["Indices"][i+1],model["Indices"][i+2])
+					except:
+						print(i)
+				
+				indPos = i
+				materialGeom = Geom(geomDataAry)
+				materialGeom.addPrimitive(face)
+				geometry.addGeom(materialGeom)
+		
+		#Apply textures
+		for n in range(geometry.getNumGeoms()):
+			textures = materialDefs[n].getAttrib()
+			newRenderState = geometry.getGeomState(n).addAttrib(textures,1)
+			geometry.setGeomState(n, newRenderState)
+			
+		self.nodePath = render.attachNewNode(geometry) #setRenderModeWireframe
+		self.nodePath.setTransparency(TransparencyAttrib.M_alpha)
+		self.nodePath.setTextureOff(0)
+		#self.nodePath.setRenderModeWireframe()
+		
+		self.base.disableMouse() # if you leave mouse mode enabled camera position will be governed by Panda mouse control
+		
+		self.base.useDrive()
+		self.base.useTrackball()
+		
+		self.base.trackball.node().setPos(0, model["Radius"]+20, 0)
+		self.base.trackball.node().setP(120)
+		
 	def displayBWM(self,model):
 		#Loop through the meshes and insert the vertices associated with that mesh (This is a node)
 		#	Render the node and apply the texture
 		#	The issue is that the I'll have to integate the indices properly for each mesh as well
 		#Actually each mesh has a set of materials, those materials would be the "node" so to speak, however I wonder if there is ever any overlap
-		t2 = False
-		t3 = False
+		t2 = True #False
+		t3 = True #False
 		fmt = GeomVertexArrayFormat()
 		fmt.addColumn("vertex",3,Geom.NTFloat32,Geom.CPoint)
 		fmt.addColumn("normal",3,Geom.NTFloat32,Geom.CNormal)
-		fmt.addColumn("texcoord",2,Geom.NTFloat32,Geom.CTexcoord)
+		fmt.addColumn("texcoord.base",2,Geom.NTFloat32,Geom.CTexcoord)
 		if(t2 == True):
-			fmt.addColumn("texcoord2",2,Geom.NTFloat32,Geom.CTexcoord)
+			fmt.addColumn("texcoord.plants",2,Geom.NTFloat32,Geom.CTexcoord)
 		if(t3 == True):
-			fmt.addColumn("texcoord3",2,Geom.NTFloat32,Geom.CTexcoord)
+			fmt.addColumn("texcoord.fire",2,Geom.NTFloat32,Geom.CTexcoord)
 		gfmt = GeomVertexFormat()
 		gfmt.addArray(fmt)
 		gfmt = GeomVertexFormat.registerFormat(gfmt)
@@ -160,20 +363,27 @@ class TkinterGuiClass(ttk.Frame):
 		#Collect vertices
 		vertices = GeomVertexWriter(self.vnode, 'vertex')
 		normals = GeomVertexWriter(self.vnode, 'normal')
-		texcoord = GeomVertexWriter(self.vnode, 'texcoord')
+		texcoord = GeomVertexWriter(self.vnode, 'texcoord.base')
 		if(t2 == True):
-			texcoord2 = GeomVertexWriter(self.vnode, 'texcoord2')
+			texcoord2 = GeomVertexWriter(self.vnode, 'texcoord.plants')
 		if(t3 == True):
-			texcoord3 = GeomVertexWriter(self.vnode, 'texcoord3')
+			texcoord3 = GeomVertexWriter(self.vnode, 'texcoord.fire')
 		
 		#Mat0: 6634
 		#Mat1: 6634 -> 7531
 		cnt=0
+		pnts = []
+		vpnts = []
 		for vtx in range(0,model.m["cntVerticies"]):
 			p = model.m["Vertices"][vtx]["Position"]
 			n = model.m["Vertices"][vtx]["Normal"]
 			v = model.m["Vertices"][vtx]["V"]
 			u = model.m["Vertices"][vtx]["U"]
+			#v2 = model.m["Vertices"][vtx]["Unknown1"][0]
+			#u2 = model.m["Vertices"][vtx]["Unknown1"][1]
+			#v3 = model.m["Vertices"][vtx]["Unknown2"][0]
+			#u3 = model.m["Vertices"][vtx]["Unknown2"][1]
+			vpnts.append(p)
 			#if(cnt < 7538):
 			#	if("Unknown1" in model.m["Vertices"][vtx]):
 			#		print("{0}: U2 {1}, V2 {2}; U3 {3}, V3 {4}".format(cnt,round(model.m["Vertices"][vtx]["Unknown1"][0],3),round(model.m["Vertices"][vtx]["Unknown1"][1],3),round(model.m["Vertices"][vtx]["Unknown2"][0],3),round(model.m["Vertices"][vtx]["Unknown2"][1],3)))
@@ -181,41 +391,76 @@ class TkinterGuiClass(ttk.Frame):
 			vertices.addData3f(p["X"],p["Y"],p["Z"])
 			normals.addData3f(n["X"],n["Y"],n["Z"])
 			texcoord.addData2(u, -v)
+			#texcoord2.addData2(u2, -v2)
+			#texcoord3.addData2(u3, -v3)
 			cnt+=1
 		
 		
 		cnt=0
 		cntm = 0
+		indPos = 0
 		matTex = []
 		for mh in model.m["Meshs"]:
 			#if(model.m["cntMeshs"] > 1):
 			#	if(cntm == (model.m["cntMeshs"] - 1)):
 			#		break
-			for mt in mh["Materials"]:				
+			for mt in mh["Materials"]:
 				nm = mh["Name"] + "_" + str(mt["MaterialRef"])
 				#Collect faces
 				ptv = GeomTriangles(Geom.UHStatic)
-				for i in range(mt["offIndices"],mt["offIndices"] + mt["cntIndices"],3):
-					ptv.addVertices(model.m["Indices"][i],model.m["Indices"][i+1],model.m["Indices"][i+2])
+				for i in range(indPos,indPos + mt["cntIndices"],3):
+					try:
+						#if(cntm == (model.m["cntMeshs"] - 1)):
+						#	print("{0},{1},{2}".format(model.m["Indices"][i],model.m["Indices"][i+1],model.m["Indices"][i+2]))
+						inpnt = []
+						inpnt.append(model.m["Vertices"][model.m["Indices"][i]]["Position"])
+						inpnt.append(model.m["Vertices"][model.m["Indices"][i+1]]["Position"])
+						inpnt.append(model.m["Vertices"][model.m["Indices"][i+2]]["Position"])
+						pnts.append(inpnt)
+						ptv.addVertices(model.m["Indices"][i],model.m["Indices"][i+1],model.m["Indices"][i+2])
+						indPos += 3
+					except:
+						print(i)
+						#return
 				
 				geom = Geom(self.vnode)
 				geom.addPrimitive(ptv)
 				nodes.addGeom(geom)
 				
-				if(model.m["Materials"][mt["MaterialRef"]]["DiffuseMap"] == ""):
-					txLoc2 = txLoc + "/t_courtyardground.dds"
-				else:
-					txLoc2 = txLoc + "/" + model.m["Materials"][mt["MaterialRef"]]["DiffuseMap"]
-				tex = loader.loadTexture(txLoc2)
-				ts = TextureStage(nm)
-				ts.setMode(TextureStage.MModulate)
-				txa = TextureAttrib.make()
-				txa = txa.addOnStage(ts, tex)
-				matTex.append(txa)
-				#self.nodePath.setTexture(tex)
+				#default texture, which is completely transparent
+				textLocation = txLoc + "/t_courtyardground.dds"
+				if(model.m["Materials"][mt["MaterialRef"]]["DiffuseMap"] != ""):
+					textLocation = txLoc + "/" + model.m["Materials"][mt["MaterialRef"]]["DiffuseMap"]
+				#load texture
+				texture = loader.loadTexture(textLocation)
+				if(texture != False): #if a texture is not found, don't do this part
+					#TextureStage: a slot to hold a single texture
+					ts = TextureStage(nm) #nm = mesh[Name]_material[Name]
+					
+					#Texture order
+					#The following function call can be used to specify the order in which the textures will appear
+					#<texturestage>.setSort(#) #The default is 0
+					#<texturestage>.setPriority() #Sets which texture is of the most importance
+					
+					#Texture transforms would likely have to be used for the flame textures. But must be done through the nodepath
+					#<nodepath>.setTextureOffset(<texturestage>, uoffset, voffset)
+					#<nodepath>.setTextureScale(<texturestage>, uScale, vScale)
+					#<nodepath>.setTextureRotate(<texturestage>, degrees)
+					
+					ts.setTexcoordName("base")
+					
+					#The mode maybe be useful for spectual and normal maps and the like...
+					#plants and veins could be best as decal
+					#spectual could be glossy
+					#normal is (nicely named) a normal map mode
+					ts.setMode(TextureStage.MModulate)
+					txa = TextureAttrib.make()
+					txa = txa.addOnStage(ts, texture)
+					matTex.append(txa)
+					#self.nodePath.setTexture(tex)
 			cntm+=1
 		for n in range(nodes.getNumGeoms()):
-			if(matTex[n] == None):
+			if((matTex[n] == None) or (matTex[n] == False)):
 				continue
 			tx = matTex[n]
 			newRenderState = nodes.getGeomState(n).addAttrib(tx,1)
@@ -225,29 +470,36 @@ class TkinterGuiClass(ttk.Frame):
 		self.nodePath.setTransparency(TransparencyAttrib.M_alpha)
 		self.nodePath.setTextureOff(0)
 		#self.nodePath.setRenderModeWireframe()
-		self.base.camera.reparentTo(self.nodePath)
 		
 		self.base.disableMouse() # if you leave mouse mode enabled camera position will be governed by Panda mouse control
 		
-		self.o_x = (model.m["BoxPoint1"]["X"] + model.m["BoxPoint2"]["X"]) / 2
-		self.o_y = (model.m["BoxPoint1"]["Y"] + model.m["BoxPoint2"]["Y"]) / 2
-		self.o_z = (model.m["BoxPoint1"]["Z"] + model.m["BoxPoint2"]["Z"]) / 2
+		self.base.useDrive()
+		self.base.useTrackball()
 		
-		x = 80
-		y = 50
-		z = 0
-		#self.base.camera.setPos(x, y, z)
-		self.setCamPos(31.67,0,94)
-		self.base.camera.lookAt(self.o_x,self.o_y,self.o_z)
-		self.base.camera.setR(90)
-		#self.lookat(self.o_x,self.o_y,self.o_z,x,y,z)
-		#self.base.camera.lookat(self.cubeNodePath)
+		self.base.trackball.node().setPos(0, model.m["Radius"]+20, 0)
+		self.base.trackball.node().setP(120)
+		
 		
 		self.drawEntities(model.m["Entities"])
 		self.points = {}
 		self.drawPoints("Unknowns 1",model.m["Un1"],0,0,1,True)
 		self.drawPoints("Unknowns 2",model.m["Un2"],0,1,1,True)
-		#self.drawPoints("Interaction",model.m["Meshs"][0]["Points"],1,1,0,False)
+		#self.drawPoints("Interactions",model.m["Meshs"][0]["Points"],1,0,0,False)
+		#self.drawPoints("Vertices",vpnts,1,1,0,False)
+		#pnts = []
+		#cnt = 0
+		#for vtx in range(2014,2030):
+		#	pnts.append(model.m["Vertices"][vtx]["Position"])
+		#	print("{0}: {1},{2},{3}".format(2014+cnt,model.m["Vertices"][vtx]["Position"]["X"],model.m["Vertices"][vtx]["Position"]["Y"],model.m["Vertices"][vtx]["Position"]["Z"]))
+		#	cnt+=1
+		#cnt = 0
+		#for face in pnts:
+		#	self.drawPoints("Face{0}".format(cnt),face,1,1,0,True)
+		#	cnt+=1
+		#self.showPoint("Face0",0)
+		#self.showPoint("Face0",1)
+		#self.showPoint("Face0",2)
+		self.fc = 0
 		
 	def drawEntities(self,ents):
 		#Entities
@@ -264,6 +516,23 @@ class TkinterGuiClass(ttk.Frame):
 			node = ls.create()
 			self.EntAry.append(render.attachNewNode(node))
 			self.EntAry[-1].hide()
+			
+	def loopThroughFaces(self):
+		self.hidePoint("Face{0}".format(self.fc),0)
+		self.hidePoint("Face{0}".format(self.fc),1)
+		self.hidePoint("Face{0}".format(self.fc),2)
+		self.fc += 1
+		print(self.fc)
+		if(("Face{0}".format(self.fc)) in self.points):
+			self.showPoint("Face{0}".format(self.fc),0)
+			self.showPoint("Face{0}".format(self.fc),1)
+			self.showPoint("Face{0}".format(self.fc),2)
+		else:
+			self.fc = 0
+			self.showPoint("Face0",0)
+			self.showPoint("Face0",1)
+			self.showPoint("Face0",2)
+		
 	
 	def showEntity(self,index):
 		if(index < len(self.EntAry)):
@@ -277,18 +546,37 @@ class TkinterGuiClass(ttk.Frame):
 		
 	def drawPoints(self,title,points,r,g,b,hd):
 		self.points[title] = []
+		ergb = 0
 		for pnt in points:
 			ls = LineSegs()
-			ls.setThickness(5)
-		
+			ls.setThickness(3)
+			if(ergb == 1):
+				g = 0.5
+			elif(ergb == 2):
+				g = 1
+			elif(ergb == 3):
+				r = 0.5
+			elif(ergb == 4):
+				r = 0
+			elif(ergb == 5):
+				b = 0.5
+			elif(ergb == 6):
+				b = 1
+			elif(ergb == 7):
+				g = 0.5
+			elif(ergb == 8):
+				g = 0
+			elif(ergb == 9):
+				r = 0.5
 			ls.setColor(r, g, b, 1.0)
 			ls.moveTo(pnt["X"], pnt["Y"], pnt["Z"])
-			ls.drawTo(pnt["X"], pnt["Y"]+0.5, pnt["Z"])
+			ls.drawTo(pnt["X"], pnt["Y"]+0.3, pnt["Z"])
 			
 			node = ls.create()
 			self.points[title].append(render.attachNewNode(node))
 			if(hd == True):
 				self.points[title][-1].hide()
+			ergb += 1
 			
 	def showPoint(self,title,index):
 		if(title in self.points):
@@ -301,17 +589,6 @@ class TkinterGuiClass(ttk.Frame):
 			if(index < len(self.points[title])):
 				self.points[title][index].hide()
 		return
-		
-	def setCamPos(self, ang1, ang2, dist):
-		
-		r_aRound = radians(ang2)
-		r_aUp = radians(ang1)
-		
-		x = self.o_x + dist * sin(r_aUp) * cos(r_aRound)#* cos(r_aRound)
-		y = self.o_y + dist * sin(r_aUp) * sin(r_aRound)#* sin(r_aRound) * sin(r_aUp)
-		z = self.o_z + dist * cos(r_aUp) #* sin(r_aRound) * cos(r_aUp)
-		
-		self.base.camera.setPos(x, y, z)	
 	
 	def destroyModel(self):
 		self.nodePath.removeNode()
