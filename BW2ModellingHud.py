@@ -6,6 +6,7 @@
 # Version: 1
 ####################################################################################################
 #Program uses Tkinter for user interface
+import settings
 from tkinter import *
 import tkinter.font
 import tkinter.filedialog as tkFileDialog
@@ -28,7 +29,7 @@ class Form1(Frame):
 		filemenu.add_command(label="Open",command=self.fileLoad)
 		filemenu.add_command(label="Save")
 		filemenu.add_separator()
-		filemenu.add_command(label="Exit")
+		filemenu.add_command(label="Exit",command=root.destroy)
 		self.menubar.add_cascade(label="File",menu=filemenu)
 
 		helpmenu = Menu(self.menubar, tearoff=0)
@@ -65,6 +66,9 @@ def main():
 	global root,Frm1
 	
 	args = sys.argv[1:] #Get main arguments
+	#Initialize settings
+	settings.init()
+	
 
 	root = Tk()
 
@@ -72,12 +76,8 @@ def main():
 	root.wm_title("Bw2 Model Editor")
 
 	root.update() # this is needed to obtain actual screen measurements 
-	#canv = Canvas(root, width=1200, height=600)
-	#canv.place(x=10,y=300)
-	#root.configure(background='black')
 		
 	Frm1 = Form1(root)
-	# Frm1.Setup() # based on BinData (and other Config stuff), init some of the Devices[] data.
 	Frm1.makeWidgets() # Make sure Setup runs before makeWidgets
 	Frm1.pack(side=TOP)
 

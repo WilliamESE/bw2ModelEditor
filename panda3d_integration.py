@@ -1,3 +1,4 @@
+import settings
 from tkinter import *
 import numpy as np
 import os
@@ -61,26 +62,26 @@ class p3dClass():
 	bw2Textures = bw2Root+"/Data/Art/textures"
 	
 	class bw2TextureClass():
-		def __init__(self,name,material,locationWin,location):
+		def __init__(self,name,material):
 			#Each material will have 7 pieces of information:
 			#	Diffuse map - the main texture connected to the base texture coords
 			self.Diffuse = {}
 			self.Diffuse["Main"] = material["DiffuseMap"]
 			if(self.Diffuse["Main"] == ""):
 				self.Diffuse["Main"] = "t_courtyardground.dds"
-			self.locateFile(self.Diffuse,locationWin)
+			self.locateFile(self.Diffuse)
 			#	Light map - uses the base texture coords
 			self.Light = {}
 			self.Light["Main"] = material["LightMap"]
-			self.locateFile(self.Light,locationWin)
+			self.locateFile(self.Light)
 			#	Growth map - secondary texture (in all models view to this point, it has been related to foliage)
 			self.growth = {}
 			self.growth["Main"] = material["FoliageMap"]
-			self.locateFile(self.growth,locationWin)
+			self.locateFile(self.growth)
 			#	Specular map - uses the base texture coords
 			self.specular = {}
 			self.specular["Main"] = material["SpecularMap"]
-			self.locateFile(self.specular,locationWin)
+			self.locateFile(self.specular)
 			#	Animation map - secondary texture (in all models view to this point, it has been related to fire -- likely fire animation textures)
 			self.animation = {}
 			self.animation["Main"] = material["FireMap"]
@@ -88,7 +89,7 @@ class p3dClass():
 			#	Normal map - uses the base texture coords
 			self.normal = {}
 			self.normal["Main"] = material["NormalMap"]
-			self.locateFile(self.normal,locationWin)
+			self.locateFile(self.normal)
 			#	Type - what type of material this is: _glossy_, _tree_
 			self.type = material["Type"]
 			
@@ -96,12 +97,12 @@ class p3dClass():
 			self.stages = [] #These are the slots in which a single texture can be loaded
 			self.texAttrib = TextureAttrib.make()#Storage for multiple texture stages which can be applied to a geomtery node
 			
-			self.defineStage(name,"diffuse","base",self.Diffuse,location)
+			self.defineStage(name,"diffuse","base",self.Diffuse)
 			#self.defineStage(name,"light","base",self.Light,location)
-			self.defineStage(name,"growth","growth",self.growth,location)
-			self.defineStage(name,"specular","base",self.specular,location)
+			self.defineStage(name,"growth","growth",self.growth)
+			self.defineStage(name,"specular","base",self.specular)
 			#self.defineStage(name,"animation","animation",self.animation,location)
-			self.defineStage(name,"normal","base",self.normal,location)
+			self.defineStage(name,"normal","base",self.normal)
 					
 			#Texture order
 			#The following function call can be used to specify the order in which the textures will appear
@@ -118,13 +119,13 @@ class p3dClass():
 			#spectual could be glossy
 			#normal is (nicely named) a normal map mode
 			
-		def defineStage(self,name,ty,coord,item,location):
+		def defineStage(self,name,ty,coord,item):
 			if((coord != "base") and (coord != "growth") and (coord != "animation")):
 				return False
 			
 			#Main first, check to make sure it is defined and was found
 			if(item["hasMain"] == True):
-				filename = location + "/" + item["Main"]
+				filename = settings.locations["Textures_Linux"] + "/" + item["Main"]
 				texture = loader.loadTexture(filename)
 				
 				stg = TextureStage(name+ty+"Main")
@@ -139,7 +140,7 @@ class p3dClass():
 			
 			#Evil
 			if(item["hasEvil"] == True):
-				filename = location + "/" + item["Evil"]
+				filename = settings.locations["Textures_Linux"] + "/" + item["Evil"]
 				texture = loader.loadTexture(filename)
 				
 				stg = TextureStage(name+ty+"Evil")
@@ -154,7 +155,7 @@ class p3dClass():
 				
 			#Good
 			if(item["hasGood"] == True):
-				filename = location + "/" + item["Good"]
+				filename = settings.locations["Textures_Linux"] + "/" + item["Good"]
 				texture = loader.loadTexture(filename)
 				
 				stg = TextureStage(name+ty+"Good")
@@ -167,7 +168,7 @@ class p3dClass():
 					stg.setMode(TextureStage.MGloss)
 				#self.texAttrib = self.texAttrib.addOnStage(stg, texture)
 			
-		def locateFile(self,item,location):
+		def locateFile(self,item):
 			item["hasMain"] = False
 			item["hasEvil"] = False
 			item["hasGood"] = False
@@ -175,8 +176,7 @@ class p3dClass():
 			if(item["Main"] == ""):
 				return False
 				
-			filename = location + "/" + item["Main"]
-			
+			filename = settings.locations["Textures"] + "\\" + item["Main"]
 			if(os.path.exists(filename) == True):
 				item["hasMain"] = True
 				#We have the file, so that's good
@@ -191,8 +191,8 @@ class p3dClass():
 					evilName = item["Main"].replace("neut","evil")
 					goodName = item["Main"].replace("neut","good")
 					
-					evilLoca = location + "/" + evilName
-					goodLoca = location + "/" + goodName
+					evilLoca = settings.locations["Textures"] + "\\" + evilName
+					goodLoca = settings.locations["Textures"] + "\\" + goodName
 					if(os.path.exists(evilLoca) == True):
 						item["Evil"] = evilName
 						item["hasEvil"] = True
@@ -260,23 +260,27 @@ class p3dClass():
 			n = model["Vertices"][vtx]["Normal"]
 			v = model["Vertices"][vtx]["V"]
 			u = model["Vertices"][vtx]["U"]
-			v2 = model["Vertices"][vtx]["Unknown1"][0]
-			u2 = model["Vertices"][vtx]["Unknown1"][1]
-			v3 = model["Vertices"][vtx]["Unknown2"][0]
-			u3 = model["Vertices"][vtx]["Unknown2"][1]
+			if(texcoord2 == True):
+				v2 = model["Vertices"][vtx]["Unknown1"][0]
+				u2 = model["Vertices"][vtx]["Unknown1"][1]
+			if(texcoord3 == True):
+				v3 = model["Vertices"][vtx]["Unknown2"][0]
+				u3 = model["Vertices"][vtx]["Unknown2"][1]
 			
 			#Store them in the vertex data array
 			wvertices.addData3f(p["X"],p["Y"],p["Z"])
 			wnormals.addData3f(n["X"],n["Y"],n["Z"])
 			wtexcoord.addData2(u, -v) #bwm files, the v coord is flipped, hence the reason for the negative
-			wtexcoord2.addData2(u2, -v2)
-			wtexcoord3.addData2(u3, -v3)
+			if(texcoord2 == True):
+				wtexcoord2.addData2(u2, -v2)
+			if(texcoord3 == True):
+				wtexcoord3.addData2(u3, -v3)
 			
 		#Pre-material processing
 		#	Here the plan is to loop through the materials, locate the textures and determine how they should be loaded.
 		materialDefs = []
 		for mat in model["Materials"]:
-			materialDefs.append(self.bw2TextureClass(name,mat,self.bw2RootWin,self.bw2Textures))
+			materialDefs.append(self.bw2TextureClass(name,mat))
 		
 		#Now that the vertices have been transfered into the data array.
 		# The next step is to go through each mesh and its subsequent materials
@@ -286,7 +290,11 @@ class p3dClass():
 		geometry = GeomNode(name)
 		
 		indPos = 0 #Keeps track of the index position
+		faces = []
+		refs = []
 		for mesh in model["Meshs"]:
+			if(mesh["Unknown4"] != 1):
+				break
 			for material in mesh["Materials"]:
 				#This name will be used to identify the geom later
 				geomName = mesh["Name"] + "_" + str(material["MaterialRef"])
@@ -295,19 +303,21 @@ class p3dClass():
 				face = GeomTriangles(Geom.UHStatic)
 				indPos = material["offIndices"]
 				for i in range(indPos,indPos + material["cntIndices"],3):
-					try:
+					try:		
 						face.addVertices(model["Indices"][i],model["Indices"][i+1],model["Indices"][i+2])
 					except:
 						print(i)
+						return 0
 				
 				indPos = i
 				materialGeom = Geom(geomDataAry)
 				materialGeom.addPrimitive(face)
 				geometry.addGeom(materialGeom)
+				refs.append(material["MaterialRef"])
 		
 		#Apply textures
 		for n in range(geometry.getNumGeoms()):
-			textures = materialDefs[n].getAttrib()
+			textures = materialDefs[refs[n]].getAttrib()
 			newRenderState = geometry.getGeomState(n).addAttrib(textures,1)
 			geometry.setGeomState(n, newRenderState)
 			
@@ -323,6 +333,10 @@ class p3dClass():
 		
 		self.base.trackball.node().setPos(0, model["Radius"]+20, 0)
 		self.base.trackball.node().setP(120)
+		
+		self.drawEntities(model["Entities"])
+		
+		self.points = {}
 		
 	def displayBWM(self,model):
 		#Loop through the meshes and insert the vertices associated with that mesh (This is a node)
@@ -549,11 +563,11 @@ class p3dClass():
 		ergb = 0
 		for pnt in points:
 			ls = LineSegs()
-			ls.setThickness(3)
+			ls.setThickness(5)
 			if(ergb == 1):
-				g = 0.5
+				b = 1
 			elif(ergb == 2):
-				g = 1
+				g = 0
 			elif(ergb == 3):
 				r = 0.5
 			elif(ergb == 4):
@@ -570,7 +584,7 @@ class p3dClass():
 				r = 0.5
 			ls.setColor(r, g, b, 1.0)
 			ls.moveTo(pnt["X"], pnt["Y"], pnt["Z"])
-			ls.drawTo(pnt["X"], pnt["Y"]+0.3, pnt["Z"])
+			ls.drawTo(pnt["X"], pnt["Y"]+1.5, pnt["Z"])
 			
 			node = ls.create()
 			self.points[title].append(render.attachNewNode(node))

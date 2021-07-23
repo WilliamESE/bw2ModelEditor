@@ -1,3 +1,4 @@
+import settings
 import array,sys,time,os
 import re
 import numpy as np
@@ -117,12 +118,10 @@ class bwm():
 		self.m["VertexSize"] = self.readVertexSize()
 		
 		self.m["Stride"] = []
-		print(self.f.tell())
-		print(self.m["SdePos"])
 		strLen = [23,34,34,34,34,34,34,34,34]
 		for s in range(self.m["cntStrides"]):
 			self.m["Stride"].append(self.readStride(strLen[s]))
-		print(self.f.tell())
+		
 		#Verticies
 		self.m["Vertices"] = []
 		for x in range(self.m["cntVerticies"]):
@@ -152,17 +151,16 @@ class bwm():
 			for x in range(0,self.m["cntVerticies"]):
 				self.m["Matrices"]["Weight_3"].append(self.readFloat())
 		
-		print(self.f.tell())	
 		#Indices
 		self.m["Indices"] = []
+		cn = 0
 		for x in range(self.m["cntIndices"]):
 			val = self.readInt16()
 			self.m["Indices"].append(val)
-			
-		print(self.f.tell())
+		
 		#Cleaves
 		if(self.m["Type"] == 6):
-			self.m["cntCleaves"] = self.readInt32()			
+			self.m["cntCleaves"] = self.readInt32()	
 			self.m["Cleaves"] = []
 			for x in range(self.m["cntCleaves"]):
 				try:

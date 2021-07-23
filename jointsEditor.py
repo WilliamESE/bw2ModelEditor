@@ -1,9 +1,10 @@
+import settings
 from tkinter import *
 import tkinter.font
 import tkinter.messagebox
 from  tkinter.scrolledtext import *
 from tkinter import ttk
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk as pil
 import array,sys,time,os
 import numpy as np
 import bwm
@@ -14,8 +15,8 @@ class jointsEditor():
 		self.ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 		self.p3d = p3d
 		
-		self.showicon = PhotoImage(file=self.ROOT_DIR + '\\Images\\Icons\\Showing.png')
-		self.hideicon = PhotoImage(file=self.ROOT_DIR + '\\Images\\Icons\\Hidden.png')
+		self.showicon = pil.PhotoImage(file=settings.icons["Show"])
+		self.hideicon = pil.PhotoImage(file=settings.icons["Hide"])
 		
 		#Points list display
 		self.canvas = Canvas(root)

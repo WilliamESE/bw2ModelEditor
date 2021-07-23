@@ -1,9 +1,11 @@
+import settings
 from tkinter import *
 import tkinter.font
 import tkinter.messagebox
 from  tkinter.scrolledtext import *
 from tkinter import ttk
-from PIL import Image, ImageTk
+from tkinter import simpledialog
+from PIL import Image, ImageTk as pil
 import array,sys,time,os
 import numpy as np
 import bwm
@@ -11,15 +13,17 @@ from functools import partial
 
 class entityEditor():
 	def __init__(self, root):
+		self.root = root
+		self.vEnt = []
 		#Entities: Tool bar
 		self.ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 		self.toolbar = Frame(root, bd=1, relief=FLAT)
 		
-		self.showicon = PhotoImage(file=self.ROOT_DIR + '\\Images\\Icons\\Showing.png')
-		self.hideicon = PhotoImage(file=self.ROOT_DIR + '\\Images\\Icons\\Hidden.png')
+		self.showicon = pil.PhotoImage(file=settings.icons["Show"])
+		self.hideicon = pil.PhotoImage(file=settings.icons["Hide"])
 		
 		#Add Button
-		eaicon = PhotoImage(file=self.ROOT_DIR + '\\Images\\Icons\\addIcon.png')
+		eaicon = pil.PhotoImage(file=settings.icons["Add"])
 		self.ebtnadd = Button(self.toolbar, width=20, height=20, relief=FLAT, image=eaicon, command = lambda: self.bwmInitEntity_Add())
 		self.ebtnadd.image = eaicon
 		self.ebtnadd.pack(side=LEFT, padx=2, pady=2)
@@ -55,55 +59,53 @@ class entityEditor():
 		self.entityList = entlist
 		self.p3d = p3d
 		#Pre-processing
-		editicon = PhotoImage(file=self.ROOT_DIR + '\\Images\\Icons\\editIcon.png')
-		deleteicon = PhotoImage(file=self.ROOT_DIR + '\\Images\\Icons\\deleteIcon.png')
+		editicon = pil.PhotoImage(file=settings.icons["Edit"])
+		deleteicon = pil.PhotoImage(file=settings.icons["Delete"])
 		
 		#Loop through entities
 		self.entityFrames = []
 		self.vbtn = []
-		self.vEnt = []
 		cnt = 0
 		for ent in entlist:
 			#Create Frame
-			if((cnt % 2) == 0):
-				entFrame = Frame(self.frame, bd=1, relief=FLAT)
-			else:
-				entFrame = Frame(self.frame, bd=1, relief=FLAT, bg="light blue")
+			entFrame = Frame(self.frame, bd=1, relief=FLAT)
 			
 			#Text Name
-			if((cnt % 2) == 0):
-				btxt = Label(entFrame,text=ent["Name"])
-			else:
-				btxt = Label(entFrame,text=ent["Name"], bg="light blue")
+			btxt = Label(entFrame,text=ent["Name"])
 			btxt.pack(side=LEFT, padx=2, pady=2)
 			
 			#Edit Button
-			if((cnt % 2) == 0):
-				vbtn = Button(entFrame, width=20, height=20, relief=FLAT, image=self.hideicon, command = partial(self.toggleEntity, cnt))
+			if(not (cnt in self.vEnt)):
+				self.vEnt.append(0)
+				
+			if(self.vEnt[cnt] == 1):
+				vbtn = Button(entFrame, width=20, height=20, relief=FLAT, image=self.showicon, command = partial(self.toggleEntity, cnt))
+				vbtn.image = self.showicon
 			else:
-				vbtn = Button(entFrame, width=20, height=20, relief=FLAT, image=self.hideicon, command = partial(self.toggleEntity, cnt), bg="light blue")
-			vbtn.image = self.hideicon
+				vbtn = Button(entFrame, width=20, height=20, relief=FLAT, image=self.hideicon, command = partial(self.toggleEntity, cnt))
+				vbtn.image = self.hideicon
+				
 			vbtn.pack(side=RIGHT, padx=2, pady=2)
-			
 			self.vbtn.append(vbtn)
-			self.vEnt.append(0)
 			
 			#Delete Button
-			if((cnt % 2) == 0):
-				dbtn = Button(entFrame, width=20, height=20, relief=FLAT, image=deleteicon, command = partial(self.removeEntity, cnt))
-			else:
-				dbtn = Button(entFrame, width=20, height=20, relief=FLAT, image=deleteicon, command = partial(self.removeEntity, cnt), bg="light blue")
+			dbtn = Button(entFrame, width=20, height=20, relief=FLAT, image=deleteicon, command = partial(self.removeEntity, cnt))
 			dbtn.image = deleteicon
 			dbtn.pack(side=RIGHT, padx=2, pady=2)
 			
 			#Edit Button
-			if((cnt % 2) == 0):
-				ebtn = Button(entFrame, width=20, height=20, relief=FLAT, image=editicon, command = partial(self.editEntity_init, cnt))
-			else:
-				ebtn = Button(entFrame, width=20, height=20, relief=FLAT, image=editicon, command = partial(self.editEntity_init, cnt), bg="light blue")
+			ebtn = Button(entFrame, width=20, height=20, relief=FLAT, image=editicon, command = partial(self.editEntity_init, cnt))
 			ebtn.image = editicon
 			ebtn.pack(side=RIGHT, padx=2, pady=2)
 			
+			#Colours
+			if((cnt % 2) != 0):
+				entFrame.config(bg="light blue")
+				btxt.config(bg="light blue")
+				vbtn.config(bg="light blue")
+				dbtn.config(bg="light blue")
+				ebtn.config(bg="light blue")
+				
 			#Pack
 			entFrame.pack(side=TOP, fill=X)
 			self.entityFrames.append(entFrame)
@@ -153,12 +155,16 @@ class entityEditor():
 	def removeEntity(self,index):
 		del self.entityList[index]
 		self.reloadEntities()
-	
-	#**Init functions**
+		
+	#**Edit functions**
 	def editEntity_init(self, index):
-		self.openEditor(self.entityList[index],1,index)
+		entResult = self.itemDialog(self.root, self.entityList[index])
+		if(entResult.state == "Okay"):
+			self.entityList[index] = entResult.entry
+			self.reloadEntities()
 		
 	def bwmInitEntity_Add(self):
+		#Initialize an empty entity
 		enty = {}
 		enty["Name"] = "bws_ep_door"
 		enty["Position"] = {}
@@ -178,149 +184,147 @@ class entityEditor():
 		enty["Unknown3"]["Y"] = 1
 		enty["Unknown3"]["Z"] = 0
 		
-		self.openEditor(enty,0,0)
-	
-	#**Saving**
-	def editEntity(self, index):
-		self.entityList[index]["Name"] = self.ent_nameEntered.get()
-		self.entityList[index]["Position"]["X"] = float(self.ent_posX.get())
-		self.entityList[index]["Position"]["Y"] = float(self.ent_posY.get())
-		self.entityList[index]["Position"]["Z"] = float(self.ent_posZ.get())
+		#Open dialog box
+		entResult = self.itemDialog(self.root, enty)
+		if(entResult.state == "Okay"):
+			self.entityList.append(entResult.entry)
+			self.reloadEntities()
 		
-		self.entityList[index]["Unknown1"]["X"] = float(self.ent_U1X.get())
-		self.entityList[index]["Unknown1"]["Y"] = float(self.ent_U1Y.get())
-		self.entityList[index]["Unknown1"]["Z"] = float(self.ent_U1Z.get())
-		
-		self.entityList[index]["Unknown2"]["X"] = float(self.ent_U2X.get())
-		self.entityList[index]["Unknown2"]["Y"] = float(self.ent_U2Y.get())
-		self.entityList[index]["Unknown2"]["Z"] = float(self.ent_U2Z.get())
-		
-		self.entityList[index]["Unknown3"]["X"] = float(self.ent_U3X.get())
-		self.entityList[index]["Unknown3"]["Y"] = float(self.ent_U3Y.get())
-		self.entityList[index]["Unknown3"]["Z"] = float(self.ent_U3Z.get())
-		
-		self.Enteditor.destroy()
-		self.reloadEntities()
-		
-	def addEntity(self):
-		ent = {}
-		ent["Name"] = self.ent_nameEntered.get()
-		ent["Position"] = {}
-		ent["Position"]["X"] = float(self.ent_posX.get())
-		ent["Position"]["Y"] = float(self.ent_posY.get())
-		ent["Position"]["Z"] = float(self.ent_posZ.get())
-		
-		ent["Unknown1"] = {}
-		ent["Unknown1"]["X"] = float(self.ent_U1X.get())
-		ent["Unknown1"]["Y"] = float(self.ent_U1Y.get())
-		ent["Unknown1"]["Z"] = float(self.ent_U1Z.get())
-		
-		ent["Unknown2"] = {}
-		ent["Unknown2"]["X"] = float(self.ent_U2X.get())
-		ent["Unknown2"]["Y"] = float(self.ent_U2Y.get())
-		ent["Unknown2"]["Z"] = float(self.ent_U2Z.get())
-		
-		ent["Unknown3"] = {}
-		ent["Unknown3"]["X"] = float(self.ent_U3X.get())
-		ent["Unknown3"]["Y"] = float(self.ent_U3Y.get())
-		ent["Unknown3"]["Z"] = float(self.ent_U3Z.get())
-		
-		self.entityList.append(ent)
-		self.Enteditor.destroy()
-		self.reloadEntities()
-	
-	def cancelEntity(self):
-		self.Enteditor.destroy()
-	
-	#**Editor**
-	def openEditor(self,enty,edit,index):
-		self.Enteditor = Tk()
-		self.Enteditor.wm_title("Entity Editor")
-		self.Enteditor.geometry("%dx%d+0+0" % (225, 150))
-		
-		#Name editor
-		self.ent_namelbl = Label(self.Enteditor,text="Name:")
-		self.ent_namelbl.place(x=5,y=5)
-		self.ent_nameEntered = Entry(self.Enteditor, width = 28)
-		self.ent_nameEntered.insert(0, enty["Name"])
-		self.ent_nameEntered.place(x=45,y=6)
-		
-		#location
-		ent_poslbl1 = Label(self.Enteditor,text="Pos: X")
-		ent_poslbl1.place(x=5,y=30)
-		self.ent_posX = Entry(self.Enteditor, width = 6)
-		self.ent_posX.insert(0, round(enty["Position"]["X"],3))
-		self.ent_posX.place(x=45,y=31)
-		ent_poslbl2 = Label(self.Enteditor,text="Y")
-		ent_poslbl2.place(x=90,y=30)
-		self.ent_posY = Entry(self.Enteditor, width = 6)
-		self.ent_posY.insert(0, round(enty["Position"]["Y"],3))
-		self.ent_posY.place(x=105,y=31)
-		ent_poslbl3 = Label(self.Enteditor,text="Z")
-		ent_poslbl3.place(x=150,y=30)
-		self.ent_posZ = Entry(self.Enteditor, width = 6)
-		self.ent_posZ.insert(0, round(enty["Position"]["Z"],3))
-		self.ent_posZ.place(x=165,y=31)
-		
-		#Unknown 1
-		ent_U1lbl1 = Label(self.Enteditor,text="Un1: X")
-		ent_U1lbl1.place(x=5,y=50)
-		self.ent_U1X = Entry(self.Enteditor, width = 6)
-		self.ent_U1X.insert(0, round(enty["Unknown1"]["X"],3))
-		self.ent_U1X.place(x=45,y=51)
-		ent_U1lbl2 = Label(self.Enteditor,text="Y")
-		ent_U1lbl2.place(x=90,y=50)
-		self.ent_U1Y = Entry(self.Enteditor, width = 6)
-		self.ent_U1Y.insert(0, round(enty["Unknown1"]["Y"],3))
-		self.ent_U1Y.place(x=105,y=51)
-		ent_U1lbl3 = Label(self.Enteditor,text="Z")
-		ent_U1lbl3.place(x=150,y=50)
-		self.ent_U1Z = Entry(self.Enteditor, width = 6)
-		self.ent_U1Z.insert(0, round(enty["Unknown1"]["Z"],3))
-		self.ent_U1Z.place(x=165,y=51)
-		
-		#Unknown 2
-		ent_U2lbl1 = Label(self.Enteditor,text="Un2: X")
-		ent_U2lbl1.place(x=5,y=70)
-		self.ent_U2X = Entry(self.Enteditor, width = 6)
-		self.ent_U2X.insert(0, round(enty["Unknown2"]["X"],3))
-		self.ent_U2X.place(x=45,y=71)
-		ent_U2lbl2 = Label(self.Enteditor,text="Y")
-		ent_U2lbl2.place(x=90,y=70)
-		self.ent_U2Y = Entry(self.Enteditor, width = 6)
-		self.ent_U2Y.insert(0, round(enty["Unknown2"]["Y"],3))
-		self.ent_U2Y.place(x=105,y=71)
-		ent_U2lbl3 = Label(self.Enteditor,text="Z")
-		ent_U2lbl3.place(x=150,y=70)
-		self.ent_U2Z = Entry(self.Enteditor, width = 6)
-		self.ent_U2Z.insert(0, round(enty["Unknown2"]["Z"],3))
-		self.ent_U2Z.place(x=165,y=71)
-		
-		#Unknown 3
-		ent_U3lbl1 = Label(self.Enteditor,text="Un3: X")
-		ent_U3lbl1.place(x=5,y=90)
-		self.ent_U3X = Entry(self.Enteditor, width = 6)
-		self.ent_U3X.insert(0, round(enty["Unknown3"]["X"],3))
-		self.ent_U3X.place(x=45,y=91)
-		ent_U3lbl2 = Label(self.Enteditor,text="Y")
-		ent_U3lbl2.place(x=90,y=90)
-		self.ent_U3Y = Entry(self.Enteditor, width = 6)
-		self.ent_U3Y.insert(0, round(enty["Unknown3"]["Y"],3))
-		self.ent_U3Y.place(x=105,y=91)
-		ent_U3lbl3 = Label(self.Enteditor,text="Z")
-		ent_U3lbl3.place(x=150,y=90)
-		self.ent_U3Z = Entry(self.Enteditor, width = 6)
-		self.ent_U3Z.insert(0, round(enty["Unknown3"]["Z"],3))
-		self.ent_U3Z.place(x=165,y=91)
-		
-		#Add Button
-		ent_Can = Button(self.Enteditor, text="Cancel", command = lambda: self.cancelEntity())
-		ent_Can.place(x=120,y=120)
-		if(edit == 1):
-			end_Save = Button(self.Enteditor, text="Save", command = partial(self.editEntity, index))
-		else:
-			end_Save = Button(self.Enteditor, text="Save", command = lambda: self.addEntity())
-		end_Save.place(x=180,y=120)
-		
-		self.Enteditor.mainloop()
+	class itemDialog(simpledialog.Dialog):
+		def __init__(self, parent, entry):
+			self.entry = entry
+			self.state = "Cancel"
+			super().__init__(parent, "Entity Editor")
+			
+		def body(self, frame):
+			#Name editor
+			nameFrame = Frame(frame, bd=1, relief=FLAT)
+			
+			lbl_name = Label(nameFrame,text="Name:")
+			lbl_name.pack(side=LEFT, padx=2, pady=2)
+			self.ent_name = Entry(nameFrame, width = 28)
+			self.ent_name.insert(0, self.entry["Name"])
+			self.ent_name.pack(side=LEFT, padx=2, pady=2)
+			
+			nameFrame.pack(side=TOP, fill=X)
+			
+			#location
+			positionFrame = Frame(frame, bd=1, relief=FLAT)
+			
+			ent_poslbl1 = Label(positionFrame,text="Pos: X")
+			ent_poslbl1.pack(side=LEFT, padx=2, pady=2)
+			self.ent_posX = Entry(positionFrame, width = 6)
+			self.ent_posX.insert(0, round(self.entry["Position"]["X"],3))
+			self.ent_posX.pack(side=LEFT, padx=2, pady=2)
+			ent_poslbl2 = Label(positionFrame,text="Y")
+			ent_poslbl2.pack(side=LEFT, padx=2, pady=2)
+			self.ent_posY = Entry(positionFrame, width = 6)
+			self.ent_posY.insert(0, round(self.entry["Position"]["Y"],3))
+			self.ent_posY.pack(side=LEFT, padx=2, pady=2)
+			ent_poslbl3 = Label(positionFrame,text="Z")
+			ent_poslbl3.pack(side=LEFT, padx=2, pady=2)
+			self.ent_posZ = Entry(positionFrame, width = 6)
+			self.ent_posZ.insert(0, round(self.entry["Position"]["Z"],3))
+			self.ent_posZ.pack(side=LEFT, padx=2, pady=2)
+			
+			positionFrame.pack(side=TOP, fill=X)
+			
+			#Unknown 1
+			unknown1Frame = Frame(frame, bd=1, relief=FLAT)
+			
+			ent_U1lbl1 = Label(unknown1Frame,text="Un1: X")
+			ent_U1lbl1.pack(side=LEFT, padx=2, pady=2)
+			self.ent_U1X = Entry(unknown1Frame, width = 6)
+			self.ent_U1X.insert(0, round(self.entry["Unknown1"]["X"],3))
+			self.ent_U1X.pack(side=LEFT, padx=2, pady=2)
+			ent_U1lbl2 = Label(unknown1Frame,text="Y")
+			ent_U1lbl2.pack(side=LEFT, padx=2, pady=2)
+			self.ent_U1Y = Entry(unknown1Frame, width = 6)
+			self.ent_U1Y.insert(0, round(self.entry["Unknown1"]["Y"],3))
+			self.ent_U1Y.pack(side=LEFT, padx=2, pady=2)
+			ent_U1lbl3 = Label(unknown1Frame,text="Z")
+			ent_U1lbl3.pack(side=LEFT, padx=2, pady=2)
+			self.ent_U1Z = Entry(unknown1Frame, width = 6)
+			self.ent_U1Z.insert(0, round(self.entry["Unknown1"]["Z"],3))
+			self.ent_U1Z.pack(side=LEFT, padx=2, pady=2)
+			
+			unknown1Frame.pack(side=TOP, fill=X)
+			
+			#Unknown 2
+			unknown2Frame = Frame(frame, bd=1, relief=FLAT)
+			
+			ent_U2lbl1 = Label(unknown2Frame,text="Un2: X")
+			ent_U2lbl1.pack(side=LEFT, padx=2, pady=2)
+			self.ent_U2X = Entry(unknown2Frame, width = 6)
+			self.ent_U2X.insert(0, round(self.entry["Unknown2"]["X"],3))
+			self.ent_U2X.pack(side=LEFT, padx=2, pady=2)
+			ent_U2lbl2 = Label(unknown2Frame,text="Y")
+			ent_U2lbl2.pack(side=LEFT, padx=2, pady=2)
+			self.ent_U2Y = Entry(unknown2Frame, width = 6)
+			self.ent_U2Y.insert(0, round(self.entry["Unknown2"]["Y"],3))
+			self.ent_U2Y.pack(side=LEFT, padx=2, pady=2)
+			ent_U2lbl3 = Label(unknown2Frame,text="Z")
+			ent_U2lbl3.pack(side=LEFT, padx=2, pady=2)
+			self.ent_U2Z = Entry(unknown2Frame, width = 6)
+			self.ent_U2Z.insert(0, round(self.entry["Unknown2"]["Z"],3))
+			self.ent_U2Z.pack(side=LEFT, padx=2, pady=2)
+			
+			unknown2Frame.pack(side=TOP, fill=X)
+			
+			#Unknown 3
+			unknown3Frame = Frame(frame, bd=1, relief=FLAT)
+			
+			ent_U3lbl1 = Label(unknown3Frame,text="Un3: X")
+			ent_U3lbl1.pack(side=LEFT, padx=2, pady=2)
+			self.ent_U3X = Entry(unknown3Frame, width = 6)
+			self.ent_U3X.insert(0, round(self.entry["Unknown3"]["X"],3))
+			self.ent_U3X.pack(side=LEFT, padx=2, pady=2)
+			ent_U3lbl2 = Label(unknown3Frame,text="Y")
+			ent_U3lbl2.pack(side=LEFT, padx=2, pady=2)
+			self.ent_U3Y = Entry(unknown3Frame, width = 6)
+			self.ent_U3Y.insert(0, round(self.entry["Unknown3"]["Y"],3))
+			self.ent_U3Y.pack(side=LEFT, padx=2, pady=2)
+			ent_U3lbl3 = Label(unknown3Frame,text="Z")
+			ent_U3lbl3.pack(side=LEFT, padx=2, pady=2)
+			self.ent_U3Z = Entry(unknown3Frame, width = 6)
+			self.ent_U3Z.insert(0, round(self.entry["Unknown3"]["Z"],3))
+			self.ent_U3Z.pack(side=LEFT, padx=2, pady=2)
+			
+			unknown3Frame.pack(side=TOP, fill=X)
+			
+			return frame
+			
+		def ok_pressed(self):
+			# print("ok")
+			self.entry["Name"] = self.ent_name.get()
+			self.entry["Position"]["X"] = float(self.ent_posX.get())
+			self.entry["Position"]["Y"] = float(self.ent_posY.get())
+			self.entry["Position"]["Z"] = float(self.ent_posZ.get())
+			
+			self.entry["Unknown1"]["X"] = float(self.ent_U1X.get())
+			self.entry["Unknown1"]["Y"] = float(self.ent_U1Y.get())
+			self.entry["Unknown1"]["Z"] = float(self.ent_U1Z.get())
+			
+			self.entry["Unknown2"]["X"] = float(self.ent_U2X.get())
+			self.entry["Unknown2"]["Y"] = float(self.ent_U2Y.get())
+			self.entry["Unknown2"]["Z"] = float(self.ent_U2Z.get())
+			
+			self.entry["Unknown3"]["X"] = float(self.ent_U3X.get())
+			self.entry["Unknown3"]["Y"] = float(self.ent_U3Y.get())
+			self.entry["Unknown3"]["Z"] = float(self.ent_U3Z.get())
+			self.state = "Okay"
+			self.destroy()
+
+		def cancel_pressed(self):
+			# print("cancel")
+			self.state = "Cancel"
+			self.destroy()
+
+		def buttonbox(self):
+			self.ok_button = Button(self, text='OK', width=7, command=self.ok_pressed)
+			self.ok_button.pack(side="right")
+			cancel_button = Button(self, text='Cancel', width=7, command=self.cancel_pressed)
+			cancel_button.pack(side="right")
+			self.bind("<Return>", lambda event: self.ok_pressed())
+			self.bind("<Escape>", lambda event: self.cancel_pressed())
 		

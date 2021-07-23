@@ -1,10 +1,11 @@
+import settings
 from tkinter import *
 import tkinter.font
 import tkinter.filedialog as tkFileDialog
 from tkinter import messagebox
 from  tkinter.scrolledtext import *
 from tkinter import ttk
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk as pil
 import array,sys,time,os
 import numpy as np
 import ntpath
@@ -102,7 +103,7 @@ class bwSculpting():
 		#Toolbar: Open, Save, ?
 		self.tools = Frame(self.frm, bd=1, relief=FLAT)
 		#Save Button
-		sicon = PhotoImage(file=self.ROOT_DIR + '\\Images\\Icons\\saveIcon.png')
+		sicon = pil.PhotoImage(file=settings.icons["Save"])
 		self.btnSave = Button(self.tools, image=sicon, width=20, height=20, relief=FLAT, command = lambda: self.saveModel())
 		self.btnSave.image = sicon
 		if(self.Err != 0):
@@ -110,7 +111,7 @@ class bwSculpting():
 		self.btnSave.pack(side=LEFT, padx=2, pady=2)
 		
 		#Convert
-		cicon = PhotoImage(file=self.ROOT_DIR + '\\Images\\Icons\\convertIcon.png')
+		cicon = pil.PhotoImage(file=settings.icons["Convert"])
 		self.btnConvert = Button(self.tools, image=cicon, width=20, height=20, relief=FLAT, command= lambda: self.fileDialog("convert"))
 		if(self.Err != 0):
 			self.btnConvert["state"] = DISABLED
@@ -118,7 +119,7 @@ class bwSculpting():
 		self.btnConvert.pack(side=LEFT, padx=2, pady=2)
 		
 		
-		aicon = PhotoImage(file=self.ROOT_DIR + '\\Images\\Icons\\addIcon.png')
+		aicon = pil.PhotoImage(file=settings.icons["Add"])
 		self.btnShow = Button(self.tools, image=aicon, width=20, height=20, relief=FLAT, command= lambda: self.loopThrough())
 		self.btnShow.image = aicon
 		self.btnShow.pack(side=LEFT, padx=2, pady=2)
@@ -204,7 +205,7 @@ class bwSculpting():
 		self.tools = Frame(self.frm, bd=1, relief=FLAT)
 		
 		#Tool bar
-		cicon = PhotoImage(file=self.ROOT_DIR + '\\Images\\Icons\\convertIcon.png')
+		cicon = pil.PhotoImage(file=settings.icons["Convert"])
 		self.btnConvert = Button(self.tools, image=cicon, width=20, height=20, relief=FLAT, command= lambda: self.fileDialog("convert"))
 		if(self.Err != 0):
 			self.btnConvert["state"] = DISABLED

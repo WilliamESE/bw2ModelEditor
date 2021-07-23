@@ -1,9 +1,10 @@
+import settings
 from tkinter import *
 import tkinter.font
 import tkinter.messagebox
 from  tkinter.scrolledtext import *
 from tkinter import ttk
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk as pil
 import array,sys,time,os
 import numpy as np
 import bwm
@@ -15,7 +16,7 @@ class materialEditor():
 		#Entities: Tool bar
 		#self.toolbar = Frame(root, bd=1, relief=FLAT)
 		#Add Button
-		#eaicon = PhotoImage(file='C:\\Users\\William\\Documents\\BW\\BW2Models\\python\\Images\\addIcon.png')
+		#eaicon = pil.PhotoImage(file=settings.icons["Add"])
 		#self.ebtnadd = Button(self.toolbar, width=20, height=20, relief=FLAT, image=eaicon, command = lambda: self.addMaterial())
 		#self.ebtnadd.image = eaicon
 		#self.ebtnadd.pack(side=LEFT, padx=2, pady=2)
@@ -44,7 +45,7 @@ class materialEditor():
 	def loadMaterials(self, mats):
 		self.matList = mats
 		
-		deleteicon = PhotoImage(file=self.ROOT_DIR + '\\Images\\Icons\\deleteIcon.png')
+		deleteicon = pil.PhotoImage(file=settings.icons["Delete"])
 		
 		self.entriesMats = []
 		self.matFrames = []

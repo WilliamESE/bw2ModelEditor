@@ -1,9 +1,10 @@
 from tkinter import *
 import tkinter.font
 import tkinter.messagebox
+import settings
 from  tkinter.scrolledtext import *
 from tkinter import ttk
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk as pil
 import array,sys,time,os
 import numpy as np
 import bwm
@@ -11,11 +12,12 @@ from functools import partial
 
 class meshEditor():
 	def __init__(self, root):
+		self.root = root
 		self.ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 		#Entities: Tool bar
 		#self.toolbar = Frame(root, bd=1, relief=FLAT)
 		##Add Button
-		#eaicon = PhotoImage(file='C:\\Users\\William\\Documents\\BW\\BW2Models\\python\\Images\\addIcon.png')
+		#eaicon = pil.PhotoImage(file=settings.icons["Add"])
 		#self.ebtnadd = Button(self.toolbar, width=20, height=20, relief=FLAT, image=eaicon, command = lambda: self.addMaterial())
 		#self.ebtnadd.image = eaicon
 		#self.ebtnadd.pack(side=LEFT, padx=2, pady=2)
@@ -51,8 +53,8 @@ class meshEditor():
 	def loadMeshes(self, meshes):
 		self.meshList = meshes
 		#Pre-processing
-		editicon = PhotoImage(file=self.ROOT_DIR + '\\Images\\Icons\\editIcon.png')
-		deleteicon = PhotoImage(file=self.ROOT_DIR + '\\Images\\Icons\\deleteIcon.png')
+		editicon = pil.PhotoImage(file=settings.icons["Edit"])
+		deleteicon = pil.PhotoImage(file=settings.icons["Delete"])
 		
 		#Loop through entities
 		self.meshFrames = []
@@ -109,170 +111,190 @@ class meshEditor():
 		
 	def editMesh_init(self,index):
 		self.editor = index
-		self.openEditor(self.meshList[index])
-	
-	#Saving
-	def saveMesh(self):
-		idx = self.editor
-		#Loop through the settings
-		for s in self.mshItems:
-			if(s["Item"] == "Mesh"):
-				if(s["Index"] == "Name"):
-					self.meshList[idx][s["Index"]] = s["Entry"].get()
-				elif(s["Index"] == "Volume"):
-					self.meshList[idx][s["Index"]] = float(s["Entry"].get())
-				else:
-					self.meshList[idx][s["Index"]] = int(s["Entry"].get())
-			elif(s["Item"] == "Mat"):
-				#These are all ints
-				#	["Materials"][Material index]["Setting"]
-				self.meshList[idx]["Materials"][s["Number"]][s["Index"]] = int(s["Entry"].get())
-			elif(s["Item"] == "pnt"):
-				self.meshList[idx]["Points"][s["Number"]]["X"] = float(s["EntryX"].get())
-				self.meshList[idx]["Points"][s["Number"]]["Y"] = float(s["EntryY"].get())
-				self.meshList[idx]["Points"][s["Number"]]["Z"] = float(s["EntryZ"].get())
-		self.reloadMeshes()
-		self.Mesheditor.destroy()
+		meshResult = self.itemDialog(self.root, self.meshList[index])
+		if(meshResult.state == "Okay"):
+			self.meshList[index] = meshResult.mesh
+			self.reloadMeshes()
 		
-	def cancelMeshEdit(self):
-		self.Mesheditor.destroy()
-		
-	#Window
-	def openEditor(self,mesh):
-		#There are three sections, the first is the direct settings involved in the mesh; second is the material references; and third is the interaction information.
-		self.mshItems = []
-		mshNames = ["Name","Face Count","Ind Offset","Ind Count","Ver Offset","Ver Count","Unk 1","Volume","Unk 3","Unk 4","Unk 5","Unk 6"]
-		mshElements = ["Name","cntFaces","offIndices","cntIndices","offVertices","cntVertices","Unknown1","Volume","Unknown3","Unknown4","Unknown5","Unknown6"]
-		
-		self.Mesheditor = Tk()
-		self.Mesheditor.wm_title("Mesh Editor")
-		self.Mesheditor.geometry("%dx%d+0+0" % (600, 350))
-		
-		mshSettings = Frame(self.Mesheditor, bd=1, relief=FLAT)
-		
-		set_1frm = Frame(mshSettings, bd=1, relief=FLAT, width=200)
-		
-		matTools = Frame(set_1frm, bd=1, relief=FLAT, width=200)
-		mTitle_lbl = Label(matTools,text="Mesh Properties",anchor="w")
-		mTitle_lbl.config(font=("Times New Roman", 14))
-		mTitle_lbl.pack(side=LEFT)
-		matTools.pack(side=TOP, fill=X)
-		
-		for cnt in range(0, len(mshNames)):
-			mshfrm = Frame(set_1frm, bd=1, relief=FLAT)
+	class itemDialog(simpledialog.Dialog):
+		def __init__(self, parent, mesh):
+			self.mesh = mesh
+			self.state = "Cancel"
+			self.mshItems = []
+			super().__init__(parent, "Mesh Editor")
 			
-			mshlbl = Label(mshfrm,text=mshNames[cnt], anchor="e", width=9)
-			mshlbl.pack(side=LEFT)
-			mshEntr =  Entry(mshfrm, width = 15)
-			mshEntr.insert(0, mesh[mshElements[cnt]])
-			mshEntr.pack(side=LEFT)
+		def body(self, frame):
+			#Data information in a nicely organized array to make this more streamlined
+			mshNames = ["Name","Face Count","Ind Offset","Ind Count","Ver Offset","Ver Count","Unk 1","Volume","Unk 3","Unk 4","Unk 5","Unk 6"]
+			mshElements = ["Name","cntFaces","offIndices","cntIndices","offVertices","cntVertices","Unknown1","Volume","Unknown3","Unknown4","Unknown5","Unknown6"]
 			
-			mshfrm.pack(side=TOP, fill=X)
+			#Section 1 is the mesh's general properties		
+			meshS1_frm = Frame(frame, bd=1, relief=FLAT, width=200)
 			
-			items = {}
-			items["Item"] = "Mesh"
-			items["Index"] = mshElements[cnt]
-			items["Entry"] = mshEntr
+			#Title
+			s1Title_frm = Frame(meshS1_frm, bd=1, relief=FLAT, width=200)
+			s1Title = Label(s1Title_frm,text="Mesh Properties",anchor="w")
+			s1Title.config(font=("Times New Roman", 14))
+			s1Title.pack(side=LEFT)
+			s1Title_frm.pack(side=TOP, fill=X)
 			
-			self.mshItems.append(items)
-		
-		set_1frm.pack(side=LEFT, fill=Y, padx=2, pady=2)
-		
-		#Material section
-		set_2frm = Frame(mshSettings, bd=1, relief=GROOVE, width=200)
-		
-		
-		self.matcanvas = Canvas(set_2frm, width=200)
-		self.matframe = Frame(self.matcanvas,bg='white', width=200)
-		self.matscroll = Scrollbar(set_2frm, orient="vertical", command=self.matcanvas.yview, width=20)
-		self.matcanvas.config(yscrollcommand=self.matscroll.set)
-		
-		self.matscroll.pack(side=RIGHT, fill=Y)
-		self.matcanvas.pack(side=LEFT, fill=BOTH, expand=True)
-		self.matcanvasframe = self.matcanvas.create_window((0, 0),window=self.matframe,anchor="nw")
-		self.matframe.bind("<Configure>",self.matscrollFunt)
-		self.matcanvas.bind("<Configure>",self.matscrollFunt2)
-		
-		matNames = ["REF","Ind offset","Ind count","Ver offset","Ver count","Face offset","Face count","Unk"]
-		matElements = ["MaterialRef","offIndices","cntIndices","offVertex","cntVertex","offFaces","cntFaces","Unknown"]
-		cnt = 0
-		for mat in mesh["Materials"]:
-			mshmatfrm = Frame(self.matframe, bd=1, relief=FLAT)
+			#Settigns
+			for cnt in range(0, len(mshNames)):
+				setfrm = Frame(meshS1_frm, bd=1, relief=FLAT)
+				
+				setlbl = Label(setfrm,text=mshNames[cnt], anchor="e", width=9)
+				setlbl.pack(side=LEFT)
+				setEntry =  Entry(setfrm, width = 15)
+				val = self.mesh[mshElements[cnt]]
+				if(mshElements[cnt] == "Volume"):
+					val = round(self.mesh[mshElements[cnt]],3)
+				setEntry.insert(0, val)
+				setEntry.pack(side=LEFT)
+				
+				setfrm.pack(side=TOP, fill=X)
+				
+				#This array is to keep all the elements packed together to make saving the data easier later.
+				items = {}
+				items["Item"] = "Mesh"
+				items["Index"] = mshElements[cnt]
+				items["Entry"] = setEntry
+				self.mshItems.append(items)
 			
-			matTools = Frame(mshmatfrm, bd=1, relief=FLAT)
-			mTitle_lbl = Label(matTools,text="Material: %d" % cnt)
+			meshS1_frm.pack(side=LEFT, fill=Y, padx=2, pady=2)
+			
+			#Section 2: List of materials
+			meshS2_frm = Frame(frame, bd=1, relief=GROOVE, width=200)
+			
+			#Setup Canvas for scrolling capablities:
+			self.matcanvas = Canvas(meshS2_frm, width=200)
+			self.matframe = Frame(self.matcanvas,bg='white', width=200)
+			self.matscroll = Scrollbar(meshS2_frm, orient="vertical", command=self.matcanvas.yview, width=20)
+			self.matcanvas.config(yscrollcommand=self.matscroll.set)
+			
+			self.matscroll.pack(side=RIGHT, fill=Y)
+			self.matcanvas.pack(side=LEFT, fill=BOTH, expand=True)
+			self.matcanvasframe = self.matcanvas.create_window((0, 0),window=self.matframe,anchor="nw")
+			self.matframe.bind("<Configure>",self.matScrollFunt)
+			self.matcanvas.bind("<Configure>",self.matScrollFunt2)
+			
+			#Load material references
+			matNames = ["REF","Ind offset","Ind count","Ver offset","Ver count","Face offset","Face count","Unk"]
+			matElements = ["MaterialRef","offIndices","cntIndices","offVertex","cntVertex","offFaces","cntFaces","Unknown"]
+			cnt = 0
+			for mat in self.mesh["Materials"]:
+				mshmatfrm = Frame(self.matframe, bd=1, relief=FLAT)
+				
+				#Material identifier
+				matTools = Frame(mshmatfrm, bd=1, relief=FLAT)
+				mTitle_lbl = Label(matTools,text="Material: %d" % cnt)
+				mTitle_lbl.config(font=("Times New Roman", 14))
+				mTitle_lbl.pack(side=LEFT)
+				matTools.pack(side=TOP, fill=X)
+				
+				#Settings
+				for ele in range(0, len(matNames)):
+					mat_ele_frm = Frame(mshmatfrm, bd=1, relief=FLAT)
+					
+					matlbl = Label(mat_ele_frm,text=matNames[ele], anchor="e", width=8)
+					matlbl.pack(side=LEFT)
+					matEntr =  Entry(mat_ele_frm, width = 22)
+					matEntr.insert(0, mat[matElements[ele]])
+					matEntr.pack(side=LEFT)
+					
+					mat_ele_frm.pack(side=TOP, fill=X)
+					
+					items = {}
+					items["Item"] = "Mat"
+					items["Number"] = cnt
+					items["Index"] = matElements[ele]
+					items["Entry"] = matEntr
+					
+					self.mshItems.append(items)
+					
+				cnt+=1
+				mshmatfrm.pack(side=TOP, fill=X)
+				
+			meshS2_frm.pack(side=LEFT,fill=Y)
+			
+			#Setions 3: Interaction variables
+			meshS3_frm = Frame(frame, bd=1, relief=FLAT, width=200)
+			
+			#Title
+			mTitle_lbl = Label(meshS3_frm,text="Interaction Information",anchor="w")
 			mTitle_lbl.config(font=("Times New Roman", 14))
-			mTitle_lbl.pack(side=LEFT)
-			matTools.pack(side=TOP, fill=X)
+			mTitle_lbl.pack(side=TOP)
 			
-			for ele in range(0, len(matNames)):
-				mat_ele_frm = Frame(mshmatfrm, bd=1, relief=FLAT)
+			#Settings
+			cnt = 0
+			pntnames = ["Point 1","Point 2","Point 3","Point 4","Point 5","Point 6","Point 7","Point 8","Point 9"]
+			for pnt in self.mesh["Points"]:
+				pnt_ele_frm = Frame(meshS3_frm, bd=1, relief=FLAT)
 				
-				matlbl = Label(mat_ele_frm,text=matNames[ele], anchor="e", width=8)
-				matlbl.pack(side=LEFT)
-				matEntr =  Entry(mat_ele_frm, width = 22)
-				matEntr.insert(0, mat[matElements[ele]])
-				matEntr.pack(side=LEFT)
+				pnt_lbl = Label(pnt_ele_frm,text=pntnames[cnt],width=6,anchor="w")
+				pnt_lbl.pack(side=LEFT)
 				
-				mat_ele_frm.pack(side=TOP, fill=X)
+				pnt_entryX = Entry(pnt_ele_frm, width = 6)
+				pnt_entryX.insert(0, round(pnt["X"],3))
+				pnt_entryX.pack(side=LEFT)
+				pnt_entryY = Entry(pnt_ele_frm, width = 6)
+				pnt_entryY.insert(0, round(pnt["Y"],3))
+				pnt_entryY.pack(side=LEFT)
+				pnt_entryZ = Entry(pnt_ele_frm, width = 6)
+				pnt_entryZ.insert(0, round(pnt["Z"],3))
+				pnt_entryZ.pack(side=LEFT)
+				
+				pnt_ele_frm.pack(side=TOP, fill=X)
 				
 				items = {}
-				items["Item"] = "Mat"
+				items["Item"] = "pnt"
 				items["Number"] = cnt
-				items["Index"] = matElements[ele]
-				items["Entry"] = matEntr
+				items["EntryX"] = pnt_entryX
+				items["EntryY"] = pnt_entryY
+				items["EntryZ"] = pnt_entryZ
+				cnt+=1
 				
 				self.mshItems.append(items)
-				
-			cnt+=1
-			mshmatfrm.pack(side=TOP, fill=X)
 			
-		set_2frm.pack(side=LEFT,fill=Y)
+			meshS3_frm.pack(side=LEFT,fill=Y)
+			
+			return frame
 		
-		set_3frm = Frame(mshSettings, bd=1, relief=FLAT, width=200)
-		mTitle_lbl = Label(set_3frm,text="Interaction Information",anchor="w")
-		mTitle_lbl.config(font=("Times New Roman", 14))
-		mTitle_lbl.pack(side=TOP)
-		#Interaction information
-		cnt = 0
-		pntnames = ["Point 1","Point 2","Point 3","Point 4","Point 5","Point 6","Point 7","Point 8","Point 9"]
-		for pnt in mesh["Points"]:
-			pnt_ele_frm = Frame(set_3frm, bd=1, relief=FLAT)
+		def matScrollFunt2(self, event):
+			canvas_width = event.width
+			self.matcanvas.itemconfig(self.matcanvasframe, width = canvas_width)
+
+		def matScrollFunt(self,event):
+			self.matcanvas.configure(scrollregion=self.matcanvas.bbox("all"))
 			
-			pnt_lbl = Label(pnt_ele_frm,text=pntnames[cnt],width=6,anchor="w")
-			pnt_lbl.pack(side=LEFT)
-			
-			pnt_entryX = Entry(pnt_ele_frm, width = 6)
-			pnt_entryX.insert(0, round(pnt["X"],3))
-			pnt_entryX.pack(side=LEFT)
-			pnt_entryY = Entry(pnt_ele_frm, width = 6)
-			pnt_entryY.insert(0, round(pnt["Y"],3))
-			pnt_entryY.pack(side=LEFT)
-			pnt_entryZ = Entry(pnt_ele_frm, width = 6)
-			pnt_entryZ.insert(0, round(pnt["Z"],3))
-			pnt_entryZ.pack(side=LEFT)
-			
-			pnt_ele_frm.pack(side=TOP, fill=X)
-			
-			items = {}
-			items["Item"] = "pnt"
-			items["Number"] = cnt
-			items["EntryX"] = pnt_entryX
-			items["EntryY"] = pnt_entryY
-			items["EntryZ"] = pnt_entryZ
-			cnt+=1
-			
-			self.mshItems.append(items)
-			
-		set_3frm.pack(side=LEFT,fill=Y)
-		
-		mshSettings.pack(side=TOP,fill=X)
-		#Buttons
-		mshFrmBTN = Frame(self.Mesheditor, bd=1, relief=FLAT)
-		end_Save = Button(mshFrmBTN, text="Save", command = lambda: self.saveMesh())
-		end_Save.pack(side=RIGHT)
-		ent_Can = Button(mshFrmBTN, text="Cancel", command = lambda: self.cancelMeshEdit())
-		ent_Can.pack(side=RIGHT)
-		mshFrmBTN.pack(side=BOTTOM, fill=X)
-		
-		self.Mesheditor.mainloop()
+		def ok_pressed(self):
+			# print("ok")
+			#Loop through the settings
+			for s in self.mshItems:
+				if(s["Item"] == "Mesh"):
+					if(s["Index"] == "Name"):
+						self.mesh[s["Index"]] = s["Entry"].get()
+					elif(s["Index"] == "Volume"):
+						self.mesh[s["Index"]] = float(s["Entry"].get())
+					else:
+						self.mesh[s["Index"]] = int(s["Entry"].get())
+				elif(s["Item"] == "Mat"):
+					self.mesh["Materials"][s["Number"]][s["Index"]] = int(s["Entry"].get())
+				elif(s["Item"] == "pnt"):
+					self.mesh["Points"][s["Number"]]["X"] = float(s["EntryX"].get())
+					self.mesh["Points"][s["Number"]]["Y"] = float(s["EntryY"].get())
+					self.mesh["Points"][s["Number"]]["Z"] = float(s["EntryZ"].get())
+			self.state = "Okay"
+			self.destroy()
+
+		def cancel_pressed(self):
+			# print("cancel")
+			self.state = "Cancel"
+			self.destroy()
+
+		def buttonbox(self):
+			self.ok_button = Button(self, text='OK', width=7, command=self.ok_pressed)
+			self.ok_button.pack(side="right")
+			cancel_button = Button(self, text='Cancel', width=7, command=self.cancel_pressed)
+			cancel_button.pack(side="right")
+			self.bind("<Return>", lambda event: self.ok_pressed())
+			self.bind("<Escape>", lambda event: self.cancel_pressed())

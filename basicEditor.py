@@ -1,9 +1,10 @@
+import settings
 from tkinter import *
 import tkinter.font
 import tkinter.messagebox
 from  tkinter.scrolledtext import *
 from tkinter import ttk
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk as pil
 import array,sys,time,os
 import numpy as np
 import bwm
@@ -23,6 +24,11 @@ class basicEditor():
 		self.canvasframe = self.canvas.create_window((0, 0),window=self.frame,anchor="nw")
 		self.frame.bind("<Configure>",self.scrollFunt)
 		self.canvas.bind("<Configure>",self.scrollFunt2)
+		
+		self.editicon = pil.PhotoImage(file=settings.icons["Edit"])
+		
+	#def __del__(self):
+		
 
 	def scrollFunt2(self, event):
 		canvas_width = event.width
@@ -147,7 +153,7 @@ class basicEditor():
 			self.set_frames.append([setGroup_frm, settings_frm])
 		
 		#Strides
-		editicon = PhotoImage(file=self.ROOT_DIR + '\\Images\\Icons\\editIcon.png')
+		self.editBtns = []
 		
 		setGroup_frm = Frame(self.frame, bd=1, relief=FLAT)
 		sTitle_lbl = Label(setGroup_frm,text="Strides")
@@ -163,9 +169,10 @@ class basicEditor():
 			set_lbl = Label(set_frm,text="S_{0}".format(scnt),anchor="w")
 			set_lbl.pack(side=LEFT)
 			
-			self.ebtnadd = Button(set_frm, width=20, height=20, relief=FLAT, image=editicon, command = partial(self.openViewer, scnt))
-			self.ebtnadd.image = editicon
-			self.ebtnadd.pack(side=RIGHT, padx=2, pady=2)
+			ebtnadd = Button(set_frm, width=20, height=20, relief=FLAT, image=self.editicon, command = partial(self.openViewer, scnt))
+			ebtnadd.image = self.editicon
+			ebtnadd.pack(side=RIGHT, padx=2, pady=2)
+			self.editBtns.append(ebtnadd)
 			
 			set_frm.pack(side=TOP, fill=X)
 			scnt += 1

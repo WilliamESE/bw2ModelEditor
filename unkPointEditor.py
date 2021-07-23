@@ -1,9 +1,10 @@
+import settings
 from tkinter import *
 import tkinter.font
 import tkinter.messagebox
 from  tkinter.scrolledtext import *
 from tkinter import ttk
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk as pil
 import array,sys,time,os
 import numpy as np
 import bwm
@@ -20,8 +21,8 @@ class unkPointEditor():
 		self.vEnt = {}
 		self.p3d = p3d
 		
-		self.showicon = PhotoImage(file=self.ROOT_DIR + '\\Images\\Icons\\Showing.png')
-		self.hideicon = PhotoImage(file=self.ROOT_DIR + '\\Images\\Icons\\Hidden.png')
+		self.showicon = pil.PhotoImage(file=settings.icons["Show"])
+		self.hideicon = pil.PhotoImage(file=settings.icons["Hide"])
 		
 		#Points list display
 		self.canvas = Canvas(root)
@@ -47,7 +48,7 @@ class unkPointEditor():
 		self.frames[title] = {}
 		self.vbtn[title] = []
 		self.vEnt[title] = []
-		deleteicon = PhotoImage(file=self.ROOT_DIR + '\\Images\\Icons\\deleteIcon.png')
+		deleteicon = pil.PhotoImage(file=settings.icons["Delete"])
 		
 		self.frames[title]["title"] = Frame(self.frame, bd=1, relief=FLAT)
 		
@@ -61,7 +62,7 @@ class unkPointEditor():
 		self.shAll[title].pack(side=RIGHT, padx=2, pady=2)
 		self.shState[title] = 0
 		
-		eaicon = PhotoImage(file=self.ROOT_DIR + '\\Images\\Icons\\addIcon.png')
+		eaicon = pil.PhotoImage(file=settings.icons["Add"])
 		self.ebtnadd = Button(self.frames[title]["title"], width=20, height=20, relief=FLAT, image=eaicon, command = partial(self.addPoint, title))
 		self.ebtnadd.image = eaicon
 		self.ebtnadd.pack(side=RIGHT, padx=2, pady=2)

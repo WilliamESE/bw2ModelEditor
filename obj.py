@@ -1,3 +1,4 @@
+import settings
 import array,sys,time,os
 import re
 import numpy as np
