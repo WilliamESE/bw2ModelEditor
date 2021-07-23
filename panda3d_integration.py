@@ -243,15 +243,15 @@ class p3dClass():
 		gVerfmt = GeomVertexFormat.registerFormat(gVerfmt)
 		
 		#Create panda3D vertex object, it is in this that all the vertices will be stored
-		geomDataAry = GeomVertexData(name, gVerfmt, Geom.UHStatic)
+		self.geomDataAry = GeomVertexData(name, gVerfmt, Geom.UHStatic)
 		#Define writers
-		wvertices = GeomVertexWriter(geomDataAry, 'vertex')
-		wnormals = GeomVertexWriter(geomDataAry, 'normal')
-		wtexcoord = GeomVertexWriter(geomDataAry, 'texcoord.base')
+		wvertices = GeomVertexWriter(self.geomDataAry, 'vertex')
+		wnormals = GeomVertexWriter(self.geomDataAry, 'normal')
+		wtexcoord = GeomVertexWriter(self.geomDataAry, 'texcoord.base')
 		if(texcoord2 == True):
-			wtexcoord2 = GeomVertexWriter(geomDataAry, 'texcoord.growth')
+			wtexcoord2 = GeomVertexWriter(self.geomDataAry, 'texcoord.growth')
 		if(texcoord3 == True):
-			wtexcoord3 = GeomVertexWriter(geomDataAry, 'texcoord.animation')
+			wtexcoord3 = GeomVertexWriter(self.geomDataAry, 'texcoord.animation')
 		
 		#Fill vertex data array
 		for vtx in range(0,model["cntVerticies"]):
@@ -310,7 +310,7 @@ class p3dClass():
 						return 0
 				
 				indPos = i
-				materialGeom = Geom(geomDataAry)
+				materialGeom = Geom(self.geomDataAry)
 				materialGeom.addPrimitive(face)
 				geometry.addGeom(materialGeom)
 				refs.append(material["MaterialRef"])
@@ -337,6 +337,8 @@ class p3dClass():
 		self.drawEntities(model["Entities"])
 		
 		self.points = {}
+		self.drawPoints("Unknowns 1",model["Un1"],0,0,1,True)
+		self.drawPoints("Unknowns 2",model["Un2"],0,1,1,True)
 		
 	def displayBWM(self,model):
 		#Loop through the meshes and insert the vertices associated with that mesh (This is a node)
@@ -560,37 +562,17 @@ class p3dClass():
 		
 	def drawPoints(self,title,points,r,g,b,hd):
 		self.points[title] = []
-		ergb = 0
 		for pnt in points:
 			ls = LineSegs()
-			ls.setThickness(5)
-			if(ergb == 1):
-				b = 1
-			elif(ergb == 2):
-				g = 0
-			elif(ergb == 3):
-				r = 0.5
-			elif(ergb == 4):
-				r = 0
-			elif(ergb == 5):
-				b = 0.5
-			elif(ergb == 6):
-				b = 1
-			elif(ergb == 7):
-				g = 0.5
-			elif(ergb == 8):
-				g = 0
-			elif(ergb == 9):
-				r = 0.5
+			ls.setThickness(3)
 			ls.setColor(r, g, b, 1.0)
 			ls.moveTo(pnt["X"], pnt["Y"], pnt["Z"])
-			ls.drawTo(pnt["X"], pnt["Y"]+1.5, pnt["Z"])
+			ls.drawTo(pnt["X"], pnt["Y"]+0.5, pnt["Z"])
 			
 			node = ls.create()
 			self.points[title].append(render.attachNewNode(node))
 			if(hd == True):
 				self.points[title][-1].hide()
-			ergb += 1
 			
 	def showPoint(self,title,index):
 		if(title in self.points):
@@ -606,7 +588,7 @@ class p3dClass():
 	
 	def destroyModel(self):
 		self.nodePath.removeNode()
-		self.vnode.clearRows()
+		self.geomDataAry.clearRows()
 
 
 
