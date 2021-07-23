@@ -85,7 +85,7 @@ class p3dClass():
 			#	Animation map - secondary texture (in all models view to this point, it has been related to fire -- likely fire animation textures)
 			self.animation = {}
 			self.animation["Main"] = material["FireMap"]
-			#self.locateFile(self.animation,locationWin)
+			self.locateFile(self.animation)
 			#	Normal map - uses the base texture coords
 			self.normal = {}
 			self.normal["Main"] = material["NormalMap"]
@@ -98,10 +98,10 @@ class p3dClass():
 			self.texAttrib = TextureAttrib.make()#Storage for multiple texture stages which can be applied to a geomtery node
 			
 			self.defineStage(name,"diffuse","base",self.Diffuse)
-			#self.defineStage(name,"light","base",self.Light,location)
-			self.defineStage(name,"growth","growth",self.growth)
+			self.defineStage(name,"light","growth",self.Light)
+			#self.defineStage(name,"growth","growth",self.growth)
 			self.defineStage(name,"specular","base",self.specular)
-			#self.defineStage(name,"animation","animation",self.animation,location)
+			#self.defineStage(name,"animation","animation",self.animation)
 			self.defineStage(name,"normal","base",self.normal)
 					
 			#Texture order
@@ -134,6 +134,10 @@ class p3dClass():
 					stg.setMode(TextureStage.MModulate)
 				elif(ty == "normal"):
 					stg.setMode(TextureStage.MNormal)
+				elif(ty == "light"):
+					stg.setMode(TextureStage.MModulate)
+				elif(ty == "animation"):
+					stg.setMode(TextureStage.MModulate)
 				elif(ty == "specular"):
 					stg.setMode(TextureStage.MGloss)
 				self.texAttrib = self.texAttrib.addOnStage(stg, texture)
@@ -146,6 +150,10 @@ class p3dClass():
 				stg = TextureStage(name+ty+"Evil")
 				stg.setTexcoordName(coord)
 				if((ty == "diffuse")):
+					stg.setMode(TextureStage.MModulate)
+				elif(ty == "light"):
+					stg.setMode(TextureStage.MModulate)
+				elif(ty == "animation"):
 					stg.setMode(TextureStage.MModulate)
 				elif(ty == "normal"):
 					stg.setMode(TextureStage.MNormal)
@@ -161,6 +169,10 @@ class p3dClass():
 				stg = TextureStage(name+ty+"Good")
 				stg.setTexcoordName(coord)
 				if((ty == "diffuse")):
+					stg.setMode(TextureStage.MModulate)
+				elif(ty == "light"):
+					stg.setMode(TextureStage.MModulate)
+				elif(ty == "animation"):
 					stg.setMode(TextureStage.MModulate)
 				elif(ty == "normal"):
 					stg.setMode(TextureStage.MNormal)
@@ -272,9 +284,9 @@ class p3dClass():
 			wnormals.addData3f(n["X"],n["Y"],n["Z"])
 			wtexcoord.addData2(u, -v) #bwm files, the v coord is flipped, hence the reason for the negative
 			if(texcoord2 == True):
-				wtexcoord2.addData2(u2, -v2)
+				wtexcoord2.addData2(v2, -u2)
 			if(texcoord3 == True):
-				wtexcoord3.addData2(u3, -v3)
+				wtexcoord3.addData2(v3, -u3)
 			
 		#Pre-material processing
 		#	Here the plan is to loop through the materials, locate the textures and determine how they should be loaded.
