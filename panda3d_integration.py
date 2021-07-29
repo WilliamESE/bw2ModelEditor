@@ -96,6 +96,8 @@ class p3dClass():
 			#Texture arrays for panda3D
 			self.stages = [] #These are the slots in which a single texture can be loaded
 			self.texAttrib = TextureAttrib.make()#Storage for multiple texture stages which can be applied to a geomtery node
+			self.texAttrib_Evil = TextureAttrib.make()#Storage for multiple texture stages which can be applied to a geomtery node
+			self.texAttrib_Good = TextureAttrib.make()#Storage for multiple texture stages which can be applied to a geomtery node
 			
 			self.defineStage(name,"diffuse","base",self.Diffuse)
 			self.defineStage(name,"light","growth",self.Light)
@@ -159,7 +161,7 @@ class p3dClass():
 					stg.setMode(TextureStage.MNormal)
 				elif(ty == "specular"):
 					stg.setMode(TextureStage.MGloss)
-				#self.texAttrib = self.texAttrib.addOnStage(stg, texture)
+				self.texAttrib_Evil = self.texAttrib.addOnStage(stg, texture)
 				
 			#Good
 			if(item["hasGood"] == True):
@@ -178,7 +180,7 @@ class p3dClass():
 					stg.setMode(TextureStage.MNormal)
 				elif(ty == "specular"):
 					stg.setMode(TextureStage.MGloss)
-				#self.texAttrib = self.texAttrib.addOnStage(stg, texture)
+				self.texAttrib_Good = self.texAttrib.addOnStage(stg, texture)
 			
 		def locateFile(self,item):
 			item["hasMain"] = False
@@ -306,7 +308,7 @@ class p3dClass():
 		refs = []
 		for mesh in model["Meshs"]:
 			if(mesh["Unknown4"] != 1):
-				break
+				continue
 			for material in mesh["Materials"]:
 				#This name will be used to identify the geom later
 				geomName = mesh["Name"] + "_" + str(material["MaterialRef"])
@@ -332,11 +334,24 @@ class p3dClass():
 			textures = materialDefs[refs[n]].getAttrib()
 			newRenderState = geometry.getGeomState(n).addAttrib(textures,1)
 			geometry.setGeomState(n, newRenderState)
-			
+		
+		#Export data to a file for use later...
+		loc = settings.locations["ConfigFolder"] + "\\Models\\" + name
+		if(os.path.exists(loc) == False):
+			os.makedirs(loc)
+		
 		self.nodePath = render.attachNewNode(geometry) #setRenderModeWireframe
 		self.nodePath.setTransparency(TransparencyAttrib.M_alpha)
 		self.nodePath.setTextureOff(0)
 		#self.nodePath.setRenderModeWireframe()
+		
+		#Generate model file
+		fl = loc+"\\"+name+".bam"
+		if(os.path.exists(fl) == False):
+			f = open(fl,"w+")
+			f.close()
+		self.nodePath.writeBamFile(settings.convertToLinux(fl))
+		#Copy textures over to that location
 		
 		self.base.disableMouse() # if you leave mouse mode enabled camera position will be governed by Panda mouse control
 		
@@ -351,183 +366,6 @@ class p3dClass():
 		self.points = {}
 		self.drawPoints("Unknowns 1",model["Un1"],0,0,1,True)
 		self.drawPoints("Unknowns 2",model["Un2"],0,1,1,True)
-		
-	def displayBWM(self,model):
-		#Loop through the meshes and insert the vertices associated with that mesh (This is a node)
-		#	Render the node and apply the texture
-		#	The issue is that the I'll have to integate the indices properly for each mesh as well
-		#Actually each mesh has a set of materials, those materials would be the "node" so to speak, however I wonder if there is ever any overlap
-		t2 = True #False
-		t3 = True #False
-		fmt = GeomVertexArrayFormat()
-		fmt.addColumn("vertex",3,Geom.NTFloat32,Geom.CPoint)
-		fmt.addColumn("normal",3,Geom.NTFloat32,Geom.CNormal)
-		fmt.addColumn("texcoord.base",2,Geom.NTFloat32,Geom.CTexcoord)
-		if(t2 == True):
-			fmt.addColumn("texcoord.plants",2,Geom.NTFloat32,Geom.CTexcoord)
-		if(t3 == True):
-			fmt.addColumn("texcoord.fire",2,Geom.NTFloat32,Geom.CTexcoord)
-		gfmt = GeomVertexFormat()
-		gfmt.addArray(fmt)
-		gfmt = GeomVertexFormat.registerFormat(gfmt)
-		#Model information:
-		flname = model.fln
-		#The problem is accessing / finding the textures. It is probably best to assume for the time being they exist solely in the bw2 directory and that it's subsequent location is also in the default location
-		txLoc = "/c/Program Files (x86)/Lionhead Studios/Black & White 2/Data/Art/textures"
-		
-		#Loop through the model's meshes and materials collecting all the needed information
-		txrs = []
-		nodes = GeomNode("Objectname")
-		#geometry = GeomVertexData("Obj", fmt, Geom.UHStatic)
-		
-		#geometry.setNumRows(model.m["cntVerticies"])
-		
-		nm = "Objectname"
-		self.vnode = GeomVertexData(nm, gfmt, Geom.UHStatic)
-		
-		#Set the number of vertices
-		self.vnode.setNumRows(model.m["cntVerticies"])
-		
-		#Collect vertices
-		vertices = GeomVertexWriter(self.vnode, 'vertex')
-		normals = GeomVertexWriter(self.vnode, 'normal')
-		texcoord = GeomVertexWriter(self.vnode, 'texcoord.base')
-		if(t2 == True):
-			texcoord2 = GeomVertexWriter(self.vnode, 'texcoord.plants')
-		if(t3 == True):
-			texcoord3 = GeomVertexWriter(self.vnode, 'texcoord.fire')
-		
-		#Mat0: 6634
-		#Mat1: 6634 -> 7531
-		cnt=0
-		pnts = []
-		vpnts = []
-		for vtx in range(0,model.m["cntVerticies"]):
-			p = model.m["Vertices"][vtx]["Position"]
-			n = model.m["Vertices"][vtx]["Normal"]
-			v = model.m["Vertices"][vtx]["V"]
-			u = model.m["Vertices"][vtx]["U"]
-			#v2 = model.m["Vertices"][vtx]["Unknown1"][0]
-			#u2 = model.m["Vertices"][vtx]["Unknown1"][1]
-			#v3 = model.m["Vertices"][vtx]["Unknown2"][0]
-			#u3 = model.m["Vertices"][vtx]["Unknown2"][1]
-			vpnts.append(p)
-			#if(cnt < 7538):
-			#	if("Unknown1" in model.m["Vertices"][vtx]):
-			#		print("{0}: U2 {1}, V2 {2}; U3 {3}, V3 {4}".format(cnt,round(model.m["Vertices"][vtx]["Unknown1"][0],3),round(model.m["Vertices"][vtx]["Unknown1"][1],3),round(model.m["Vertices"][vtx]["Unknown2"][0],3),round(model.m["Vertices"][vtx]["Unknown2"][1],3)))
-			
-			vertices.addData3f(p["X"],p["Y"],p["Z"])
-			normals.addData3f(n["X"],n["Y"],n["Z"])
-			texcoord.addData2(u, -v)
-			#texcoord2.addData2(u2, -v2)
-			#texcoord3.addData2(u3, -v3)
-			cnt+=1
-		
-		
-		cnt=0
-		cntm = 0
-		indPos = 0
-		matTex = []
-		for mh in model.m["Meshs"]:
-			#if(model.m["cntMeshs"] > 1):
-			#	if(cntm == (model.m["cntMeshs"] - 1)):
-			#		break
-			for mt in mh["Materials"]:
-				nm = mh["Name"] + "_" + str(mt["MaterialRef"])
-				#Collect faces
-				ptv = GeomTriangles(Geom.UHStatic)
-				for i in range(indPos,indPos + mt["cntIndices"],3):
-					try:
-						#if(cntm == (model.m["cntMeshs"] - 1)):
-						#	print("{0},{1},{2}".format(model.m["Indices"][i],model.m["Indices"][i+1],model.m["Indices"][i+2]))
-						inpnt = []
-						inpnt.append(model.m["Vertices"][model.m["Indices"][i]]["Position"])
-						inpnt.append(model.m["Vertices"][model.m["Indices"][i+1]]["Position"])
-						inpnt.append(model.m["Vertices"][model.m["Indices"][i+2]]["Position"])
-						pnts.append(inpnt)
-						ptv.addVertices(model.m["Indices"][i],model.m["Indices"][i+1],model.m["Indices"][i+2])
-						indPos += 3
-					except:
-						print(i)
-						#return
-				
-				geom = Geom(self.vnode)
-				geom.addPrimitive(ptv)
-				nodes.addGeom(geom)
-				
-				#default texture, which is completely transparent
-				textLocation = txLoc + "/t_courtyardground.dds"
-				if(model.m["Materials"][mt["MaterialRef"]]["DiffuseMap"] != ""):
-					textLocation = txLoc + "/" + model.m["Materials"][mt["MaterialRef"]]["DiffuseMap"]
-				#load texture
-				texture = loader.loadTexture(textLocation)
-				if(texture != False): #if a texture is not found, don't do this part
-					#TextureStage: a slot to hold a single texture
-					ts = TextureStage(nm) #nm = mesh[Name]_material[Name]
-					
-					#Texture order
-					#The following function call can be used to specify the order in which the textures will appear
-					#<texturestage>.setSort(#) #The default is 0
-					#<texturestage>.setPriority() #Sets which texture is of the most importance
-					
-					#Texture transforms would likely have to be used for the flame textures. But must be done through the nodepath
-					#<nodepath>.setTextureOffset(<texturestage>, uoffset, voffset)
-					#<nodepath>.setTextureScale(<texturestage>, uScale, vScale)
-					#<nodepath>.setTextureRotate(<texturestage>, degrees)
-					
-					ts.setTexcoordName("base")
-					
-					#The mode maybe be useful for spectual and normal maps and the like...
-					#plants and veins could be best as decal
-					#spectual could be glossy
-					#normal is (nicely named) a normal map mode
-					ts.setMode(TextureStage.MModulate)
-					txa = TextureAttrib.make()
-					txa = txa.addOnStage(ts, texture)
-					matTex.append(txa)
-					#self.nodePath.setTexture(tex)
-			cntm+=1
-		for n in range(nodes.getNumGeoms()):
-			if((matTex[n] == None) or (matTex[n] == False)):
-				continue
-			tx = matTex[n]
-			newRenderState = nodes.getGeomState(n).addAttrib(tx,1)
-			nodes.setGeomState(n, newRenderState)
-		
-		self.nodePath = render.attachNewNode(nodes) #setRenderModeWireframe
-		self.nodePath.setTransparency(TransparencyAttrib.M_alpha)
-		self.nodePath.setTextureOff(0)
-		#self.nodePath.setRenderModeWireframe()
-		
-		self.base.disableMouse() # if you leave mouse mode enabled camera position will be governed by Panda mouse control
-		
-		self.base.useDrive()
-		self.base.useTrackball()
-		
-		self.base.trackball.node().setPos(0, model.m["Radius"]+20, 0)
-		self.base.trackball.node().setP(120)
-		
-		
-		self.drawEntities(model.m["Entities"])
-		self.points = {}
-		self.drawPoints("Unknowns 1",model.m["Un1"],0,0,1,True)
-		self.drawPoints("Unknowns 2",model.m["Un2"],0,1,1,True)
-		#self.drawPoints("Interactions",model.m["Meshs"][0]["Points"],1,0,0,False)
-		#self.drawPoints("Vertices",vpnts,1,1,0,False)
-		#pnts = []
-		#cnt = 0
-		#for vtx in range(2014,2030):
-		#	pnts.append(model.m["Vertices"][vtx]["Position"])
-		#	print("{0}: {1},{2},{3}".format(2014+cnt,model.m["Vertices"][vtx]["Position"]["X"],model.m["Vertices"][vtx]["Position"]["Y"],model.m["Vertices"][vtx]["Position"]["Z"]))
-		#	cnt+=1
-		#cnt = 0
-		#for face in pnts:
-		#	self.drawPoints("Face{0}".format(cnt),face,1,1,0,True)
-		#	cnt+=1
-		#self.showPoint("Face0",0)
-		#self.showPoint("Face0",1)
-		#self.showPoint("Face0",2)
-		self.fc = 0
 		
 	def drawEntities(self,ents):
 		#Entities

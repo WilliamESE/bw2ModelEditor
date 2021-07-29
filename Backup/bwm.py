@@ -1,3 +1,4 @@
+#A back up of the original file, because what I'm about to do will break stuff :)
 import settings
 import array,sys,time,os
 import re

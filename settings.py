@@ -66,6 +66,11 @@ def updateBWRoot(loca):
 	#	So that is why this is here.
 	locations["Textures_Linux"] = locations["Textures"].replace(ntpath.sep, posixpath.sep)
 	locations["Textures_Linux"] = locations["Textures_Linux"].replace("C:","/c")
+
+def convertToLinux(path):
+	lPath = path.replace(ntpath.sep, posixpath.sep)
+	lPath = lPath.replace("C:","/c")
+	return lPath
 	
 #Save the config information
 def saveConfig():

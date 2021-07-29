@@ -15,6 +15,9 @@ import array,sys,time,os
 import ntpath
 import SculptingHud #Model editor
 
+#Other folders need to be added to the path: sys.path.append('Location')
+#	Then files in that location can be imported
+
 class Form1(Frame):
 	global root,canv
 	def __init__(self, parent=None, **kw):
@@ -44,7 +47,7 @@ class Form1(Frame):
 		
 	def fileLoad(self):
 		# Use Dialog Box to locate a svg files
-		filenm = tkFileDialog.askopenfilename(initialdir = self.ROOT_DIR,filetypes = (("BW Models","*.bwm"),("Object Files","*.obj"),("all files","*.*")))
+		filenm = tkFileDialog.askopenfilename(initialdir = self.ROOT_DIR,filetypes = (("BW Models","*.bwm"),("Object Files","*.obj"),("COLLADA","*.dae"),("all files","*.*")))
 		if not filenm: return
 		self.loadModel(filenm)
 			
@@ -53,7 +56,7 @@ class Form1(Frame):
 		dirpart, filepart = ntpath.split(filename) # get the directory part into dirpart and the file name into filepart
 		exts = filepart.split('.') # parts based on . to find the extension.  Actual extension will be exts[len(exts)-1]
 		ext = exts[len(exts)-1]
-		if(ext == "bwm")or(ext == "obj"):
+		if(ext == "bwm")or(ext == "obj")or(ext == "dae"):
 			if(self.op == True):
 				self.scuplter.loadFile(self.filenm)
 			else:
@@ -87,7 +90,7 @@ def main():
 	#The only argument (at least for now) should be a model
 	if(len(args) > 0):
 		modelName = args[0]
-		Frm1.loadModel(modelName)
+		#Frm1.loadModel(modelName)
 
 	root.mainloop()
     

@@ -11,6 +11,7 @@ import numpy as np
 import ntpath
 import bwm
 import obj
+import cda
 import basicEditor
 import entityEditor
 import materialEditor
@@ -40,6 +41,8 @@ class bwSculpting():
 			rtn = self.bwmInit(root, filename)
 		elif(self.f_ext == "obj"):
 			self.objInit(root, filename)
+		elif(self.f_ext == "dae"):
+			mod = cda.loadCda(filename)
 			
 	def loadFile(self,filename):
 		self.m_defined = 0
@@ -67,7 +70,7 @@ class bwSculpting():
 			#Empty scene
 			self.p3d.destroyModel()
 			#Create new
-			self.p3d.displayBWM(self.model)	
+			self.p3d.loadBWM(self.model.m,exts[0])	
 				
 			#Load side panel information
 			self.entityEdit.emptyData()

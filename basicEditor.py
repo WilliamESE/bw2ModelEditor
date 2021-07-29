@@ -42,6 +42,8 @@ class basicEditor():
 			self.set_frames[i][0].destroy()
 			self.set_frames[i][1].destroy()
 		self.stfrm.destroy()
+		self.setStride_title.destroy()
+		self.stfrm.destroy()
 
 	def loadInformation(self,model,tp,e):
 		self.type = tp
@@ -155,11 +157,11 @@ class basicEditor():
 		#Strides
 		self.editBtns = []
 		
-		setGroup_frm = Frame(self.frame, bd=1, relief=FLAT)
-		sTitle_lbl = Label(setGroup_frm,text="Strides")
+		self.setStride_title = Frame(self.frame, bd=1, relief=FLAT)
+		sTitle_lbl = Label(self.setStride_title,text="Strides")
 		sTitle_lbl.config(font=("Times New Roman", 14))
 		sTitle_lbl.pack(side=LEFT)
-		setGroup_frm.pack(side=TOP, fill=X)
+		self.setStride_title.pack(side=TOP, fill=X)
 		
 		self.stfrm = Frame(self.frame, bd=1, relief=FLAT)
 		scnt = 0
