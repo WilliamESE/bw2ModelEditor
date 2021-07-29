@@ -9,6 +9,8 @@ class bwm():
 		self.filename = file
 		self.name = ntpath.basename(file)
 
+class bwMesh():
+	""" A Black and White mesh """
 
 # Material relevant classes: bwImage and bwMaterial
 class bwImage():
