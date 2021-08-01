@@ -2,20 +2,6 @@ import sys
 import numpy as np
 import struct
 
-#Reading a single point
-def readLHPoint(f):
-    pt = {}
-    pt['X'] = readFloat(f)
-    pt['Y'] = readFloat(f)
-    pt['Z'] = readFloat(f)
-    return pt
-
-#Writing a single point
-def writeLHPoint(f,val):
-    writeFloat(f,val['X'])
-    writeFloat(f,val['Y'])
-    writeFloat(f,val['Z'])
-
 # Low level reading functions: int32, float, and string [until null is reached, null not included in returned string]
 def readInt32(f):
     return struct.unpack('<i', f.read(4))[0]
@@ -35,7 +21,7 @@ def readUInt8(f):
 def readFloat(f):
     return struct.unpack('<f', f.read(4))[0]
     
-def readString(f,mxRead):
+def readString(f,mxRead,jump=False):
     mystr = ''
     c = ' '
     cnt = 0
@@ -46,6 +32,12 @@ def readString(f,mxRead):
             mystr += b.decode('utf-8', 'backslashreplace')
 
         cnt+=1
+    
+    #There is a possiblity that the string has a dedicated amount of space, like 64 bytes
+    #   Which would have been passed in via the parameter mxRead. If jump = true
+    #   This following code will jump the file pointer to where the string would have ended
+    if(jump == True):
+        f.seek(f.tell()+((mxRead-1) - len(mystr)))
     return mystr
     
 # Low level writing functions:
@@ -70,9 +62,14 @@ def writeUInt8(f,val):
 def writeFloat(f,val):
     f.write(struct.pack('<f',val))
 #Write String
-def writeString(f,val):
+def writeString(f,val,num=64):
     for c in val:
         f.write(struct.pack('<c',bytes(c,'utf-8')))
+    #Write zeros for the rest of the string
+    if(len(val) < num):
+        for x in range(len(val),num):
+            writeInt8(f,0)
+
 		
 #numpy data type
 #	'<': little endian

@@ -1,19 +1,8 @@
-import settings
 import binaryReader as br
 import numpy as np
 import ntpath
 
-class bwm():
-	""" A Black and White Model class """
-	def __init__(self, file, textures = settings.locations["Textures"]):
-		self.filename = file
-		self.name = ntpath.basename(file)
-
-class bwMesh():
-	""" A Black and White mesh """
-
-# Material relevant classes: bwImage and bwMaterial
-class bwImage():
+class bwImage:
 	""" Stores a single texture file """
 	def __init__(self,file,alignment="neut",type=None):
     	#Save file information
@@ -29,7 +18,7 @@ class bwImage():
 			self.found = True
 		f.close()
 
-class bwMaterial():
+class bwMaterial:
 	def __init__(self,diffuse=None,light=None,foliage=None,specular=None,fire=None,normal=None,type=None):
 		self.diffuse = bwImage(diffuse,type="diffuse")
 		self.diffuseGood, self.diffuseEvil = self.searchForAlignmentFiles(diffuse)
@@ -77,28 +66,3 @@ class bwMaterial():
 		f.close()
 
 		return goodTexture, evilTexture
-
-#Lower level classes
-class bwPoint():
-	""" Single point in bw format (x,y,z) """
-	def __int__(self,x,y,z):
-		self.x = x
-		self.y = y
-		self.z = z
-
-	def __init__(self,file):
-		self.x = br.readFloat(file)
-		self.y = br.readFloat(file)
-		self.z = br.readFloat(file)
-
-	def writePoint(self,file):
-		br.writeFloat(file,self.x)
-		br.writeFloat(file,self.y)
-		br.writeFloat(file,self.z)
-
-def main():
-	m = bwm("diff.bwm")
-	print(m)
-
-if __name__ == '__main__':
-	main()
