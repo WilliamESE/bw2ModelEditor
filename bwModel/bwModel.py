@@ -1,9 +1,10 @@
-import settings
-import binaryReader as br
+#import settings
+#import binaryReader as br
 import numpy as np
 import ntpath
 
 import bwMaterial
+import bwMesh as mesh
 
 class bwm:
 	""" A Black and White Model class """
@@ -41,12 +42,14 @@ class bwMeshMaterial:
 #Lower level classes
 class bwPoint():
 	""" Single point in bw format (x,y,z) """
-	def __int__(self,x,y,z):
+	def __init__(self,x=None,y=None,z=None,file=None):
 		self.x = x
 		self.y = y
 		self.z = z
+		if(file != None):
+			self.readPoint(file)
 
-	def __init__(self,file):
+	def readPoint(self,file):
 		self.x = br.readFloat(file)
 		self.y = br.readFloat(file)
 		self.z = br.readFloat(file)
@@ -57,9 +60,10 @@ class bwPoint():
 		br.writeFloat(file,self.z)
 
 def main():
-	settings.init()
+	#settings.init()
 	m = bwm("diff.bwm")
-	print(m)
+
+	#print(m)
 
 if __name__ == '__main__':
 	main()

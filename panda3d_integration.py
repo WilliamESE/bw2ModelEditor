@@ -13,7 +13,7 @@ from panda3d.core import WindowProperties
 from math import *
 from direct.task import Task
 
-class TkinterGuiClass(ttk.Frame):
+class TkinterGuiClass(Frame):
     
 	def __init__(self, parent, args_):
 		# Start ShowBase, but don't open a Panda window yet

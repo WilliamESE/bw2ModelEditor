@@ -3,6 +3,7 @@ import tkinter.font
 import tkinter.messagebox
 import settings
 from  tkinter.scrolledtext import *
+import tkinter.simpledialog as simpledialog
 from tkinter import ttk
 from PIL import Image, ImageTk as pil
 import array,sys,time,os

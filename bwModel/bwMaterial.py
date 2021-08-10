@@ -1,4 +1,4 @@
-import binaryReader as br
+#import binaryReader as br
 import numpy as np
 import ntpath
 
