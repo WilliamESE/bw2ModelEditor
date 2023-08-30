@@ -7,7 +7,7 @@ Python program utlizes tkinter, numpy, panda3d, and a few others
 
 The program has an easy to use interface that allows you to open model files of bwm and OBJ format. When opened the model will appear on the right and all the details of that model listed out on the left.
 
-![Interface1, the main page of the program] (/Images/ModelEditor2.PNG)
+![Interface1, the main page of the program](/Images/ModelEditor2.PNG)
 
 The above screenshot was taken of the in game alter building when opened by the program.
 
